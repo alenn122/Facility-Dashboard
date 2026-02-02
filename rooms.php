@@ -2,23 +2,16 @@
 session_start();
 include "conn.php";
 
-// 1. Security & Cache Headers
+// Security & Cache Headers
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
-header("Expires: 0");
 
-// 2. Debugging (Keep enabled during development)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// 3. Auth Check
+// Auth Check
 if (!isset($_SESSION['id'])) {
     header("Location: login.php");
     exit();
 }
 
-// 4. Handle POST Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // --- ADD ROOM ---
@@ -28,24 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $roomType = trim($_POST['roomType']);
         $status   = trim($_POST['status']);
 
-        // Check Duplicates
         $check = $conn->prepare("SELECT Room_code FROM classrooms WHERE Room_code = ?");
         $check->bind_param("s", $roomCode);
         $check->execute();
         if ($check->get_result()->num_rows > 0) {
             $_SESSION['error_message'] = "Room code '$roomCode' already exists!";
         } else {
-            // Insert
             $stmt = $conn->prepare("INSERT INTO classrooms (Room_code, Capacity, Classroom_type, Status) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("siss", $roomCode, $capacity, $roomType, $status);
-            if ($stmt->execute()) {
-                $_SESSION['success_message'] = "Room '$roomCode' added successfully!";
-            } else {
-                $_SESSION['error_message'] = "Database Error: " . $stmt->error;
-            }
-            $stmt->close();
+            $stmt->execute();
+            $_SESSION['success_message'] = "Room added successfully!";
         }
-        $check->close();
         header("Location: rooms.php");
         exit();
     }
@@ -53,26 +39,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- DELETE ROOM ---
     if (isset($_POST['delete_room'])) {
         $roomId = $_POST['room_id'];
-
-        // Integrity Check: Is room in use by a schedule?
-        $sch = $conn->prepare("SELECT COUNT(*) FROM schedule WHERE Room_id = ?");
-        $sch->bind_param("i", $roomId);
-        $sch->execute();
-        $sch->bind_result($count);
-        $sch->fetch();
-        $sch->close();
-
-        if ($count > 0) {
-            $_SESSION['error_message'] = "Cannot delete room: It is currently assigned to a schedule!";
-        } else {
-            $del = $conn->prepare("DELETE FROM classrooms WHERE Room_id = ?");
-            $del->bind_param("i", $roomId);
-            if ($del->execute()) {
-                $_SESSION['success_message'] = "Room deleted successfully!";
-            }
-            $del->close();
-        }
+        $del = $conn->prepare("DELETE FROM classrooms WHERE Room_id = ?");
+        $del->bind_param("i", $roomId);
+        $del->execute();
         header("Location: rooms.php");
+        exit();
+    }
+
+    // --- TOGGLE STATUS (The RFID Logic) ---
+    if (isset($_POST['toggle_status'])) {
+        $deviceId = $_POST['device_id'];
+
+        $sql = "UPDATE classrooms 
+                JOIN devices ON classrooms.Room_id = devices.room_id 
+                SET classrooms.Status = IF(classrooms.Status = 'Occupied', 'Unoccupied', 'Occupied') 
+                WHERE devices.device_id = ?";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $deviceId);
+        
+        if($stmt->execute() && $stmt->affected_rows > 0) {
+            $_SESSION['success_message'] = "Room status toggled successfully!";
+        } else {
+            $_SESSION['error_message'] = "Device ID not found or not assigned to a room.";
+        }
+        header("Location: devices.php");
         exit();
     }
 }

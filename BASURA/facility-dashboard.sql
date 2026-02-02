@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 02, 2026 at 07:43 AM
+-- Generation Time: Jan 28, 2026 at 08:20 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -472,9 +472,7 @@ CREATE TABLE `classrooms` (
 
 INSERT INTO `classrooms` (`Room_id`, `Room_code`, `Status`, `Classroom_type`, `Capacity`) VALUES
 (1, 'ROOM101', 'Occupied', 'CLASSROOM', 50),
-(2, 'ROOM102', 'Occupied', 'CLASSROOM', 30),
-(3, 'ROOM104', 'Unoccupied', 'LABORATORY', 40),
-(4, 'ROOM109', 'Unoccupied', 'LABORATORY', 40);
+(2, 'ROOM102', 'Unoccupied', 'CLASSROOM', 30);
 
 -- --------------------------------------------------------
 
@@ -499,30 +497,6 @@ INSERT INTO `course_section` (`CourseSection_id`, `CourseSection`) VALUES
 (121, 'BSOA 1-21'),
 (131, 'BSOA 1-31'),
 (141, 'BSOA 1-41');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `devices`
---
-
-CREATE TABLE `devices` (
-  `device_id` int(11) NOT NULL,
-  `mac_address` varchar(17) NOT NULL,
-  `room_id` int(11) NOT NULL,
-  `device_type` enum('DOOR','POWER') DEFAULT 'DOOR',
-  `last_seen` datetime DEFAULT current_timestamp(),
-  `status` enum('Online','Offline') DEFAULT 'Offline'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `devices`
---
-
-INSERT INTO `devices` (`device_id`, `mac_address`, `room_id`, `device_type`, `last_seen`, `status`) VALUES
-(0, 'hihi', 4, 'POWER', '2026-02-02 14:35:21', 'Offline'),
-(1, 'D4:E9:F4:65:F5:1C', 1, 'POWER', '2026-02-02 14:03:15', NULL),
-(2, 'D4:E9:F4:65:76:D8', 2, 'POWER', '2026-02-02 14:03:15', NULL);
 
 -- --------------------------------------------------------
 
@@ -686,14 +660,6 @@ ALTER TABLE `course_section`
   ADD UNIQUE KEY `CourseSection` (`CourseSection`);
 
 --
--- Indexes for table `devices`
---
-ALTER TABLE `devices`
-  ADD PRIMARY KEY (`device_id`),
-  ADD UNIQUE KEY `mac_address` (`mac_address`),
-  ADD KEY `room_id` (`room_id`);
-
---
 -- Indexes for table `rfid_reader`
 --
 ALTER TABLE `rfid_reader`
@@ -746,7 +712,7 @@ ALTER TABLE `access_log`
 -- AUTO_INCREMENT for table `classrooms`
 --
 ALTER TABLE `classrooms`
-  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `course_section`

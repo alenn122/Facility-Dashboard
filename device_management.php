@@ -120,7 +120,7 @@ $rooms_result = $conn->query($room_query);
     <div class="main-content p-4">
         <div class="card shadow-sm mb-4">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <h3 class="fw-bold mb-0">Device Management</h3>
+                <h3 class="fw-bold mb-0">DeviceManagement</h3>
 
                 <div class="d-flex gap-2 w-100 justify-content-md-end">
                     <div class="input-group room-search" style="max-width: 300px;">

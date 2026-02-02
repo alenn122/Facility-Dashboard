@@ -70,16 +70,19 @@ if (!isset($_SESSION['id'])) {
                     <i class="fas fa-door-open"></i> Rooms
                 </a>
             </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="access_logs.php">
-                    <i class="fas fa-list"></i> Access Logs
-                </a>
-            </li>
-
             <li class="nav-item">
                 <a class="nav-link" href="schedule.php">
                     <i class="fas fa-calendar"></i> Schedule
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="device_management.php">
+                    <i class="fa-solid fa-desktop"></i> Device Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="access_logs.php">
+                    <i class="fas fa-list"></i> Access Logs
                 </a>
             </li>
         </ul>

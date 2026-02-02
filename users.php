@@ -69,7 +69,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
 
 <body>
 
-    <!-- Mobile Toggle Button -->
+       <!-- Mobile Toggle Button -->
     <button class="btn btn-primary d-md-none m-2" id="openSidebar">
         <i class="fas fa-bars"></i>
     </button>
@@ -107,16 +107,19 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                     <i class="fas fa-door-open"></i> Rooms
                 </a>
             </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="access_logs.php">
-                    <i class="fas fa-list"></i> Access Logs
-                </a>
-            </li>
-
             <li class="nav-item">
                 <a class="nav-link" href="schedule.php">
                     <i class="fas fa-calendar"></i> Schedule
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="device_management.php">
+                    <i class="fa-solid fa-desktop"></i> Device Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="access_logs.php">
+                    <i class="fas fa-list"></i> Access Logs
                 </a>
             </li>
         </ul>
@@ -124,7 +127,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
         <div class="sidebar-footer">
             <small class="text-white">Jonathan M.</small><br>
             <span class="text-light">Faculty Member</span>
-            <a href="#" class="logout">
+            <a href="logout.php" class="logout">
                 <i class="fas fa-sign-out-alt"></i> Log out
             </a>
         </div>

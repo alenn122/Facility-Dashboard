@@ -16,7 +16,7 @@
 
 <body>
 
-    <!-- Mobile Toggle Button -->
+       <!-- Mobile Toggle Button -->
     <button class="btn btn-primary d-md-none m-2" id="openSidebar">
         <i class="fas fa-bars"></i>
     </button>
@@ -54,16 +54,19 @@
                     <i class="fas fa-door-open"></i> Rooms
                 </a>
             </li>
-
-            <li class="nav-item">
-                <a class="nav-link active" href="access_logs.php">
-                    <i class="fas fa-list"></i> Access Logs
-                </a>
-            </li>
-
             <li class="nav-item">
                 <a class="nav-link" href="schedule.php">
                     <i class="fas fa-calendar"></i> Schedule
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="device_management.php">
+                    <i class="fa-solid fa-desktop"></i> Device Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="access_logs.php">
+                    <i class="fas fa-list"></i> Access Logs
                 </a>
             </li>
         </ul>
@@ -76,6 +79,7 @@
             </a>
         </div>
     </div>
+    <!-- REUSABLE UNTIL HERE PARA SA SIDE BAR -->
     
     <div class="main-content p-4">
         <!-- Header -->

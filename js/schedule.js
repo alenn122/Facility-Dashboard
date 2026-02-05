@@ -260,11 +260,16 @@ function createScheduleTable(courseName, schedules) {
                 <tr>
                     <td><strong>${schedule.Code}</strong></td>
                     <td>${schedule.Description || '<span class="text-muted">No description</span>'}</td>
-                    <td><span class="badge bg-info">${schedule.Day}</span></td>
+                    <td><span class="badge bg-info" style="width:40px">${schedule.Day}</span></td>
                     <td>${formatTime(schedule.Start_time)}</td>
                     <td>${formatTime(schedule.End_time)}</td>
                     <td><span class="badge bg-secondary">${schedule.Room_code}</span></td>
-                    <td>${schedule.Faculty_name}</td>
+                    <td>${schedule.Faculty_Status === 'Inactive' 
+        ? `<span class="text-danger fw-bold" title="Faculty is currently Inactive">
+            <i class="fas fa-exclamation-circle me-1"></i>${schedule.Faculty_name}
+           </span>` 
+        : schedule.Faculty_name
+    }</td>
                     <td class="table-action-btns">
                         <button class="btn btn-success btn-sm edit-btn" data-id="${schedule.Schedule_id}" title="Edit Schedule">
                             <i class="fas fa-edit"></i>

@@ -3,33 +3,30 @@
 $db_host = "localhost";
 $db_user = "root";
 $db_pass = "";
-$db_name = "facility_control_v3";
+$db_name = "facility-dashboard";
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// ================================================================
-// 1. THE "SWEEPER" (The API Decides Logic)
-// ================================================================
-// Every time this API is called (by any device), it checks ALL devices.
-// If a device hasn't been seen in 1 MINUTE, force it to 'Offline'.
-$conn->query("UPDATE devices SET status = 'Offline' WHERE last_seen < (NOW() - INTERVAL 15 SECONDS )");
-
-
-// ================================================================
-// 2. HANDLE HEARTBEAT (PING)
-// ================================================================
+// --------------------------------------------------------------------
+// 2. THE "HEARTBEAT" (Receive Ping from ESP32)
+// --------------------------------------------------------------------
 if (isset($_POST['ping'])) {
     $mac = $_POST['mac'];
     
-    // Mark THIS specific device as Online and update its time
+    // Update THIS specific device to 'Online' and refresh its timestamp
     $stmt = $conn->prepare("UPDATE devices SET last_seen = NOW(), status = 'Online' WHERE mac_address = ?");
     $stmt->bind_param("s", $mac);
-    $stmt->execute();
     
-    echo "PONG"; 
-    exit(); // Stop here
+    if ($stmt->execute()) {
+        echo "PONG"; // Tell ESP32 the ping was received
+    } else {
+        echo "ERROR";
+    }
+    
+    $stmt->close();
+    exit(); // Stop execution here so we don't run any other code
 }
 
 // 1. RECEIVE DATA

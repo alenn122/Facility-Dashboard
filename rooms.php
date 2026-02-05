@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $capacity = intval($_POST['capacity']);
         $roomType = trim($_POST['roomType']);
         $status   = trim($_POST['status']);
+        $Floor = trim($_POST['Floor']);
 
         $check = $conn->prepare("SELECT Room_code FROM classrooms WHERE Room_code = ?");
         $check->bind_param("s", $roomCode);
@@ -27,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($check->get_result()->num_rows > 0) {
             $_SESSION['error_message'] = "Room code '$roomCode' already exists!";
         } else {
-            $stmt = $conn->prepare("INSERT INTO classrooms (Room_code, Capacity, Classroom_type, Status) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("siss", $roomCode, $capacity, $roomType, $status);
+            $stmt = $conn->prepare("INSERT INTO classrooms (Room_code, Capacity, Classroom_type, Status, FLOOR) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sisss", $roomCode, $capacity, $roomType, $status, $Floor);
             $stmt->execute();
             $_SESSION['success_message'] = "Room added successfully!";
         }
@@ -212,6 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <h5><?= htmlspecialchars($row['Room_code']) ?></h5>
                                             <span class="badge <?= $badgeClass ?>"><?= $row['Status'] ?></span>
                                         </div>
+                                         <div class="room-card-header">
+                                            <h5 style="padding: 5px 5px; color: white; background-color: #007bff; border-radius: 5px; font-size: 18px;"><?= htmlspecialchars($row['FLOOR']) ?></h5>
+                                        </div>
                                         <p class="mb-3">
                                             <i class="fas fa-school"></i> Type: <?= htmlspecialchars($row['Classroom_type']) ?>
                                         </p>
@@ -244,6 +248,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label small fw-bold">Room Code</label>
                         <input type="text" name="roomCode" class="form-control" placeholder="e.g. ROOM101" required>
                     </div>
+
+                      <div class="mb-3">
+                          <select name="Floor" id="floorSelect" class="form-select">
+                            <option value="">Select Floor</option>
+                            <option value="1st Floor">1st Floor</option>
+                            <option value="2nd Floor">2nd Floor</option>
+                            <option value="3rd Floor">3rd Floor</option>
+                          </select>
+
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Room Type</label>
                         <select name="roomType" class="form-select" required>
@@ -262,6 +277,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label small fw-bold">Capacity</label>
                         <input type="number" name="capacity" class="form-control" value="40">
                     </div>
+
+                     
+
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>

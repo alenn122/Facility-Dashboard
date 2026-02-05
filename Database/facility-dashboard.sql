@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 02, 2026 at 07:43 AM
+-- Generation Time: Feb 05, 2026 at 06:29 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -50,114 +50,114 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (5, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:40:19', 'Entry', 'denied'),
 (6, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:40:27', 'Entry', 'denied'),
 (7, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:45:18', 'Entry', 'denied'),
-(8, 1, '82 04 10 01', 1, 3, '2025-10-09 15:48:46', 'Entry', 'granted'),
-(9, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 15:49:41', 'Entry', 'denied'),
+(8, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:48:46', 'Entry', 'granted'),
+(9, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-09 15:49:41', 'Entry', 'denied'),
 (10, NULL, '2,D3 CB B1 38', 2, NULL, '2025-10-09 15:49:47', 'Entry', 'denied'),
 (11, NULL, '2,D3 CB B1 38', 2, NULL, '2025-10-09 15:49:51', 'Entry', 'denied'),
-(12, 1, '82 04 10 01', 1, 3, '2025-10-09 15:49:54', 'Entry', 'granted'),
-(13, 1, '82 04 10 01', 1, 3, '2025-10-09 15:50:13', 'Entry', 'granted'),
-(14, 1, '82 04 10 01', 1, 3, '2025-10-09 15:50:43', 'Entry', 'granted'),
+(12, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:49:54', 'Entry', 'granted'),
+(13, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:50:13', 'Entry', 'granted'),
+(14, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:50:43', 'Entry', 'granted'),
 (15, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:02', 'Entry', 'denied'),
 (16, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:26', 'Exit', 'granted'),
-(17, 1, '82 04 10 01', 1, 3, '2025-10-09 15:51:33', 'Entry', 'granted'),
+(17, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:51:33', 'Entry', 'granted'),
 (18, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:40', 'Exit', 'granted'),
-(19, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:05', 'Entry', 'denied'),
-(20, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:16', 'Entry', 'denied'),
-(21, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:21', 'Entry', 'denied'),
+(19, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:52:05', 'Entry', 'denied'),
+(20, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:52:16', 'Entry', 'denied'),
+(21, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:52:21', 'Entry', 'denied'),
 (22, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:53:03', 'Entry', 'denied'),
 (23, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:53:08', 'Entry', 'denied'),
-(24, 1, '82 04 10 01', 1, 3, '2025-10-09 15:53:13', 'Entry', 'granted'),
+(24, NULL, '82 04 10 01', 1, NULL, '2025-10-09 15:53:13', 'Entry', 'granted'),
 (25, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:53:35', 'Exit', 'granted'),
 (26, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:53:37', 'Entry', 'granted'),
 (27, NULL, '2,A4 12 3D 05', 2, NULL, '2025-10-09 15:53:46', 'Entry', 'denied'),
 (28, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 16:13:01', 'Entry', 'denied'),
-(29, 1, '82 04 10 01', 1, 3, '2025-10-09 16:13:22', 'Entry', 'granted'),
-(30, 1, '82 04 10 01', 2, 3, '2025-10-09 16:14:30', 'Entry', 'granted'),
-(31, 1, '82 04 10 01', 1, 3, '2025-10-09 16:14:34', 'Entry', 'granted'),
-(32, 1, '82 04 10 01', 2, 3, '2025-10-09 16:15:53', 'Entry', 'granted'),
+(29, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:13:22', 'Entry', 'granted'),
+(30, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:14:30', 'Entry', 'granted'),
+(31, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:14:34', 'Entry', 'granted'),
+(32, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:15:53', 'Entry', 'granted'),
 (33, 8, 'A4 12 3D 05', 2, NULL, '2025-10-09 16:15:59', 'Exit', 'granted'),
-(34, 2, 'D3 CB B1 38', 2, NULL, '2025-10-09 16:16:03', 'Entry', 'denied'),
-(35, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:19:29', 'Entry', 'granted'),
-(36, 2, 'D3 CB B1 38', 1, 1, '2025-10-09 16:19:32', 'Entry', 'granted'),
+(34, NULL, 'D3 CB B1 38', 2, NULL, '2025-10-09 16:16:03', 'Entry', 'denied'),
+(35, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:19:29', 'Entry', 'granted'),
+(36, NULL, 'D3 CB B1 38', 1, 1, '2025-10-09 16:19:32', 'Entry', 'granted'),
 (37, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:40', 'Exit', 'granted'),
 (38, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:43', 'Entry', 'granted'),
 (39, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:51', 'Exit', 'granted'),
-(40, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:22:55', 'Entry', 'denied'),
-(41, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:23:00', 'Entry', 'granted'),
-(42, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:23:09', 'Entry', 'denied'),
-(43, 1, '82 04 10 01', 1, NULL, '2025-10-09 16:23:12', 'Entry', 'denied'),
+(40, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:22:55', 'Entry', 'denied'),
+(41, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:23:00', 'Entry', 'granted'),
+(42, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:23:09', 'Entry', 'denied'),
+(43, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:23:12', 'Entry', 'denied'),
 (44, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:23:46', 'Entry', 'granted'),
 (45, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:23:53', 'Exit', 'granted'),
-(46, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:23:57', 'Entry', 'denied'),
-(47, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:04', 'Entry', 'granted'),
-(48, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:20', 'Entry', 'granted'),
-(49, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:28', 'Entry', 'granted'),
-(50, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:24:50', 'Entry', 'denied'),
-(51, 1, '82 04 10 01', 1, 3, '2025-10-09 16:25:01', 'Entry', 'granted'),
-(52, 1, '82 04 10 01', 1, 3, '2025-10-09 16:26:30', 'Entry', 'granted'),
-(53, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:26:34', 'Entry', 'denied'),
-(54, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:28:41', 'Entry', 'denied'),
-(55, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:28:43', 'Entry', 'denied'),
-(56, 1, '82 04 10 01', 1, 3, '2025-10-09 16:28:45', 'Entry', 'granted'),
-(57, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:28:52', 'Entry', 'granted'),
-(58, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:28:55', 'Entry', 'denied'),
-(59, 2, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:28:40', 'Entry', 'denied'),
-(60, 2, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:30:37', 'Entry', 'denied'),
-(61, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:30:41', 'Entry', 'denied'),
-(62, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:08', 'Entry', 'denied'),
-(63, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:11', 'Entry', 'denied'),
-(64, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:14', 'Entry', 'denied'),
-(65, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:20', 'Entry', 'denied'),
-(66, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:23', 'Entry', 'denied'),
-(67, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:40:18', 'Entry', 'denied'),
-(68, 2, 'D3 CB B1 38', 1, 1, '2025-10-10 10:41:06', 'Entry', 'granted'),
-(69, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:11', 'Entry', 'granted'),
-(70, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:19', 'Entry', 'granted'),
-(71, 1, '82 04 10 01', 2, 3, '2025-10-10 10:41:27', 'Entry', 'granted'),
-(72, 1, '82 04 10 01', 1, 3, '2025-10-10 10:41:31', 'Entry', 'granted'),
-(73, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:44:08', 'Entry', 'granted'),
-(74, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:11', 'Entry', 'granted'),
-(75, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:45:47', 'Entry', 'denied'),
-(76, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:45:52', 'Entry', 'denied'),
-(77, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:56', 'Entry', 'granted'),
-(78, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:46:13', 'Entry', 'denied'),
-(79, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:46:17', 'Entry', 'granted'),
-(80, 1, '82 04 10 01', 1, 3, '2025-10-10 10:46:23', 'Entry', 'granted'),
-(81, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:46:28', 'Entry', 'denied'),
-(82, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:03', 'Entry', 'granted'),
-(83, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:26', 'Entry', 'granted'),
-(84, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:33', 'Entry', 'granted'),
+(46, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:23:57', 'Entry', 'denied'),
+(47, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:04', 'Entry', 'granted'),
+(48, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:20', 'Entry', 'granted'),
+(49, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:28', 'Entry', 'granted'),
+(50, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:24:50', 'Entry', 'denied'),
+(51, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:25:01', 'Entry', 'granted'),
+(52, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:26:30', 'Entry', 'granted'),
+(53, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:26:34', 'Entry', 'denied'),
+(54, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:28:41', 'Entry', 'denied'),
+(55, NULL, '82 04 10 01', 2, NULL, '2025-10-09 16:28:43', 'Entry', 'denied'),
+(56, NULL, '82 04 10 01', 1, NULL, '2025-10-09 16:28:45', 'Entry', 'granted'),
+(57, NULL, 'D3 CB B1 38', 2, 1, '2025-10-09 16:28:52', 'Entry', 'granted'),
+(58, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:28:55', 'Entry', 'denied'),
+(59, NULL, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:28:40', 'Entry', 'denied'),
+(60, NULL, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:30:37', 'Entry', 'denied'),
+(61, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:30:41', 'Entry', 'denied'),
+(62, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:39:08', 'Entry', 'denied'),
+(63, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:39:11', 'Entry', 'denied'),
+(64, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:39:14', 'Entry', 'denied'),
+(65, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:39:20', 'Entry', 'denied'),
+(66, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:39:23', 'Entry', 'denied'),
+(67, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:40:18', 'Entry', 'denied'),
+(68, NULL, 'D3 CB B1 38', 1, 1, '2025-10-10 10:41:06', 'Entry', 'granted'),
+(69, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:11', 'Entry', 'granted'),
+(70, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:19', 'Entry', 'granted'),
+(71, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:41:27', 'Entry', 'granted'),
+(72, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:41:31', 'Entry', 'granted'),
+(73, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:44:08', 'Entry', 'granted'),
+(74, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:11', 'Entry', 'granted'),
+(75, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:45:47', 'Entry', 'denied'),
+(76, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:45:52', 'Entry', 'denied'),
+(77, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:56', 'Entry', 'granted'),
+(78, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:46:13', 'Entry', 'denied'),
+(79, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:46:17', 'Entry', 'granted'),
+(80, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:46:23', 'Entry', 'granted'),
+(81, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:46:28', 'Entry', 'denied'),
+(82, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:03', 'Entry', 'granted'),
+(83, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:26', 'Entry', 'granted'),
+(84, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:33', 'Entry', 'granted'),
 (85, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 10:48:41', 'Exit', 'granted'),
 (86, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 10:48:48', 'Entry', 'granted'),
-(87, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:48:56', 'Entry', 'denied'),
-(88, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:48:58', 'Entry', 'denied'),
-(89, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:49:01', 'Entry', 'denied'),
-(90, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:49:04', 'Entry', 'denied'),
-(91, 1, '82 04 10 01', 1, 3, '2025-10-10 10:49:06', 'Entry', 'granted'),
-(92, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:49:10', 'Entry', 'granted'),
-(93, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:16', 'Entry', 'denied'),
-(94, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:18', 'Entry', 'denied'),
-(95, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:20', 'Entry', 'granted'),
-(96, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:31', 'Entry', 'granted'),
-(97, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:45', 'Entry', 'granted'),
+(87, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:48:56', 'Entry', 'denied'),
+(88, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:48:58', 'Entry', 'denied'),
+(89, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:49:01', 'Entry', 'denied'),
+(90, NULL, '82 04 10 01', 2, NULL, '2025-10-10 10:49:04', 'Entry', 'denied'),
+(91, NULL, '82 04 10 01', 1, NULL, '2025-10-10 10:49:06', 'Entry', 'granted'),
+(92, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 10:49:10', 'Entry', 'granted'),
+(93, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:16', 'Entry', 'denied'),
+(94, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:18', 'Entry', 'denied'),
+(95, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:20', 'Entry', 'granted'),
+(96, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:31', 'Entry', 'granted'),
+(97, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:45', 'Entry', 'granted'),
 (98, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:05:31', 'Exit', 'granted'),
-(99, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:35', 'Entry', 'denied'),
-(100, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:38', 'Entry', 'denied'),
-(101, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:47', 'Entry', 'denied'),
-(102, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:49', 'Entry', 'denied'),
-(103, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:05:55', 'Entry', 'granted'),
-(104, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:06:02', 'Entry', 'granted'),
+(99, NULL, '82 04 10 01', 2, NULL, '2025-10-10 11:05:35', 'Entry', 'denied'),
+(100, NULL, '82 04 10 01', 2, NULL, '2025-10-10 11:05:38', 'Entry', 'denied'),
+(101, NULL, '82 04 10 01', 2, NULL, '2025-10-10 11:05:47', 'Entry', 'denied'),
+(102, NULL, '82 04 10 01', 2, NULL, '2025-10-10 11:05:49', 'Entry', 'denied'),
+(103, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:05:55', 'Entry', 'granted'),
+(104, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:06:02', 'Entry', 'granted'),
 (105, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:11', 'Exit', 'granted'),
 (106, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:17', 'Entry', 'granted'),
 (107, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:24', 'Exit', 'granted'),
 (108, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:31', 'Entry', 'granted'),
-(109, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:07:24', 'Entry', 'denied'),
+(109, NULL, '82 04 10 01', 2, NULL, '2025-10-10 11:07:24', 'Entry', 'denied'),
 (110, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:28', 'Exit', 'granted'),
 (111, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:32', 'Entry', 'granted'),
 (112, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:40', 'Exit', 'granted'),
 (113, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:43', 'Entry', 'granted'),
-(114, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:03', 'Entry', 'granted'),
-(115, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:23', 'Entry', 'granted'),
+(114, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:03', 'Entry', 'granted'),
+(115, NULL, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:23', 'Entry', 'granted'),
 (116, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:30', 'Exit', 'granted'),
 (117, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:33', 'Entry', 'granted'),
 (118, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:41', 'Exit', 'granted'),
@@ -177,12 +177,12 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (132, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:25', 'Entry', 'denied'),
 (133, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:28', 'Entry', 'denied'),
 (134, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:30', 'Entry', 'denied'),
-(135, 1, '44 22 95 04', 1, NULL, '2025-10-13 08:13:49', 'Entry', 'denied'),
+(135, NULL, '44 22 95 04', 1, NULL, '2025-10-13 08:13:49', 'Entry', 'denied'),
 (136, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:13:54', 'Exit', 'granted'),
 (137, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:14:01', 'Entry', 'granted'),
 (138, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:14:34', 'Entry', 'granted'),
-(139, 1, '44 22 95 04', 1, NULL, '2025-10-13 08:14:40', 'Entry', 'denied'),
-(140, 1, '44 22 95 04', 2, NULL, '2025-10-13 08:14:43', 'Entry', 'denied'),
+(139, NULL, '44 22 95 04', 1, NULL, '2025-10-13 08:14:40', 'Entry', 'denied'),
+(140, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:14:43', 'Entry', 'denied'),
 (141, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:14:46', 'Exit', 'granted'),
 (142, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:14:56', 'Exit', 'granted'),
 (143, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:15:24', 'Entry', 'granted'),
@@ -271,7 +271,7 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (226, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:15', 'Exit', 'granted'),
 (227, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:18', 'Entry', 'granted'),
 (228, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:05:27', 'Entry', 'denied'),
-(229, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:05:34', 'Entry', 'denied'),
+(229, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:05:34', 'Entry', 'denied'),
 (230, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:39', 'Exit', 'granted'),
 (231, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:05', 'Entry', 'granted'),
 (232, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:11', 'Exit', 'granted'),
@@ -281,7 +281,7 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (236, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:07:19', 'Entry', 'denied'),
 (237, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:07:22', 'Entry', 'granted'),
 (238, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:08:17', 'Entry', 'denied'),
-(239, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:08:22', 'Entry', 'denied'),
+(239, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:08:22', 'Entry', 'denied'),
 (240, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:08:25', 'Exit', 'granted'),
 (241, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:18:36', 'Entry', 'granted'),
 (242, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:38:27', 'Exit', 'granted'),
@@ -294,20 +294,20 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (249, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:15', 'Entry', 'denied'),
 (250, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:20', 'Entry', 'denied'),
 (251, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:24', 'Entry', 'denied'),
-(252, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:45:39', 'Entry', 'denied'),
+(252, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:45:39', 'Entry', 'denied'),
 (253, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:45:43', 'Entry', 'denied'),
 (254, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:45:59', 'Entry', 'granted'),
-(255, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:24', 'Entry', 'denied'),
+(255, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:24', 'Entry', 'denied'),
 (256, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:47:43', 'Entry', 'denied'),
 (257, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:47:46', 'Exit', 'granted'),
 (258, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:47:52', 'Entry', 'denied'),
-(259, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:55', 'Entry', 'denied'),
+(259, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:55', 'Entry', 'denied'),
 (260, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:47:57', 'Entry', 'granted'),
 (261, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:49:37', 'Exit', 'granted'),
 (262, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:49:41', 'Entry', 'granted'),
 (263, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:50:41', 'Exit', 'granted'),
 (264, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:50:46', 'Entry', 'granted'),
-(265, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 13:10:46', 'Entry', 'denied'),
+(265, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 13:10:46', 'Entry', 'denied'),
 (266, NULL, '82 04 10 01', 1, NULL, '2025-10-17 13:10:50', 'Entry', 'denied'),
 (267, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 13:10:53', 'Entry', 'denied'),
 (268, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:10:58', 'Exit', 'granted'),
@@ -352,8 +352,8 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (307, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:24', 'Entry', 'denied'),
 (308, NULL, '82 04 10 01', 1, NULL, '2025-10-17 16:46:31', 'Entry', 'denied'),
 (309, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:35', 'Entry', 'denied'),
-(310, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:39', 'Entry', 'denied'),
-(311, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:41', 'Entry', 'denied'),
+(310, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:39', 'Entry', 'denied'),
+(311, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:41', 'Entry', 'denied'),
 (312, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:46', 'Entry', 'denied'),
 (313, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:46:49', 'Entry', 'granted'),
 (314, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:48:46', 'Exit', 'granted'),
@@ -382,7 +382,7 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (337, NULL, 'RFID Ready - Waiting for Card...', 1, NULL, '2025-10-21 16:20:45', 'Entry', 'denied'),
 (338, NULL, 'A4123D05', 1, NULL, '2025-10-21 16:20:48', 'Entry', 'denied'),
 (339, NULL, 'ACCESS DENIED', 1, NULL, '2025-10-21 16:20:48', 'Entry', 'denied'),
-(340, 2, 'D3 CB B1 38', 1, NULL, '2025-10-21 16:26:45', 'Entry', 'denied'),
+(340, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-21 16:26:45', 'Entry', 'denied'),
 (341, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 16:26:52', 'Entry', 'denied'),
 (342, NULL, '82 04 10 01', 1, NULL, '2025-10-21 16:26:55', 'Entry', 'denied'),
 (343, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:26:58', 'Exit', 'granted'),
@@ -395,7 +395,7 @@ INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_
 (350, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:28:31', 'Entry', 'granted'),
 (351, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:09:44', 'Exit', 'granted'),
 (352, NULL, '82 04 10 01', 1, NULL, '2025-10-21 19:09:48', 'Entry', 'denied'),
-(353, 2, 'D3 CB B1 38', 1, NULL, '2025-10-21 19:09:52', 'Entry', 'denied'),
+(353, NULL, 'D3 CB B1 38', 1, NULL, '2025-10-21 19:09:52', 'Entry', 'denied'),
 (354, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:09:55', 'Entry', 'denied'),
 (355, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:10:03', 'Entry', 'denied'),
 (356, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:10:06', 'Entry', 'denied'),
@@ -474,7 +474,8 @@ INSERT INTO `classrooms` (`Room_id`, `Room_code`, `Status`, `Classroom_type`, `C
 (1, 'ROOM101', 'Occupied', 'CLASSROOM', 50),
 (2, 'ROOM102', 'Occupied', 'CLASSROOM', 30),
 (3, 'ROOM104', 'Unoccupied', 'LABORATORY', 40),
-(4, 'ROOM109', 'Unoccupied', 'LABORATORY', 40);
+(4, 'ROOM109', 'Unoccupied', 'LABORATORY', 40),
+(5, '100000000000', 'Unoccupied', 'CLASSROOM', 40);
 
 -- --------------------------------------------------------
 
@@ -520,9 +521,9 @@ CREATE TABLE `devices` (
 --
 
 INSERT INTO `devices` (`device_id`, `mac_address`, `room_id`, `device_type`, `last_seen`, `status`) VALUES
-(0, 'hihi', 4, 'POWER', '2026-02-02 14:35:21', 'Offline'),
-(1, 'D4:E9:F4:65:F5:1C', 1, 'POWER', '2026-02-02 14:03:15', NULL),
-(2, 'D4:E9:F4:65:76:D8', 2, 'POWER', '2026-02-02 14:03:15', NULL);
+(0, 'hihi', 4, 'DOOR', '2026-02-02 14:35:21', 'Offline'),
+(1, 'D4:E9:F4:65:F5:1C', 1, 'POWER', '2026-02-02 17:31:57', 'Offline'),
+(2, 'D4:E9:F4:65:76:D8', 2, 'POWER', '2026-02-05 13:29:59', 'Online');
 
 -- --------------------------------------------------------
 
@@ -569,13 +570,14 @@ CREATE TABLE `schedule` (
 INSERT INTO `schedule` (`Schedule_id`, `Subject_id`, `Room_id`, `Faculty_id`, `Day`, `Start_time`, `End_time`) VALUES
 (1, 1, 2, 6, 'Fri', '10:00:00', '18:00:00'),
 (2, 1, 1, 6, 'Mon', '10:00:00', '12:00:00'),
-(3, 2, 1, 8, 'Fri', '10:00:00', '18:00:00'),
 (4, 3, 2, 6, 'Wed', '16:00:00', '19:00:00'),
 (5, 4, 1, 6, 'Tue', '13:00:00', '16:00:00'),
 (6, 5, 1, 6, 'Fri', '18:00:00', '21:00:00'),
 (7, 6, 1, 6, 'Fri', '15:00:00', '18:00:00'),
 (8, 7, 2, 7, 'Mon', '07:00:00', '10:00:00'),
-(9, 8, 2, 7, 'Mon', '13:00:00', '16:00:00');
+(9, 8, 2, 7, 'Mon', '13:00:00', '16:00:00'),
+(10, 3, 2, 6, 'Mon', '18:00:00', '22:00:00'),
+(11, 3, 1, 8, 'Sun', '00:34:00', '12:34:00');
 
 -- --------------------------------------------------------
 
@@ -596,13 +598,16 @@ CREATE TABLE `schedule_access` (
 INSERT INTO `schedule_access` (`Rule_id`, `Schedule_id`, `CourseSection_id`) VALUES
 (1, 1, 2),
 (2, 2, 2),
-(3, 3, 1),
 (4, 4, 2),
 (5, 5, 2),
 (6, 6, 131),
 (7, 7, 131),
 (8, 8, 131),
-(9, 9, 131);
+(9, 9, 131),
+(10, 10, 141),
+(11, 10, 141),
+(14, 11, 3),
+(15, 11, 3);
 
 -- --------------------------------------------------------
 
@@ -651,12 +656,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`User_id`, `Rfid_tag`, `F_name`, `L_name`, `CourseSection_id`, `Role`, `Status`) VALUES
-(1, '44 22 95 04', 'John', 'Doe', 1, 'Student', 'Active'),
-(2, 'D3 CB B1 38', 'Jane', 'Smith', 2, 'Student', 'Active'),
-(3, 'STU3944', 'Mark', 'Reyes', 3, 'Student', 'Active'),
 (6, 'FAC001', 'Anna', 'Cruz', NULL, 'Faculty', 'Active'),
 (7, 'FAC002', 'Paul', 'Santos', NULL, 'Faculty', 'Active'),
-(8, '61 DE 6A 05', 'Michael', 'Tan', NULL, 'Admin', 'Active');
+(8, '61 DE 6A 05', 'Michael', 'Tan', NULL, 'Admin', 'Inactive');
 
 --
 -- Indexes for dumped tables
@@ -746,7 +748,7 @@ ALTER TABLE `access_log`
 -- AUTO_INCREMENT for table `classrooms`
 --
 ALTER TABLE `classrooms`
-  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `course_section`
@@ -764,13 +766,13 @@ ALTER TABLE `rfid_reader`
 -- AUTO_INCREMENT for table `schedule`
 --
 ALTER TABLE `schedule`
-  MODIFY `Schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `Schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `schedule_access`
 --
 ALTER TABLE `schedule_access`
-  MODIFY `Rule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `Rule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `subject`
@@ -782,7 +784,7 @@ ALTER TABLE `subject`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- Constraints for dumped tables

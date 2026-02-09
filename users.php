@@ -285,8 +285,8 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                     </div>
                     <div class="mb-3" id="m_course_container">
                         <label class="form-label small">Course Section</label>
-                        <select name="course_id" id="m_course" class="form-select">
-                            <option value="">None</option>
+                        <select name="course_id" id="m_course" class="form-select" required>
+                             <option value="">None</option> 
                             <?php
                             $cRes = mysqli_query($conn, "SELECT * FROM course_section");
                             while($c = mysqli_fetch_assoc($cRes)) echo "<option value='{$c['CourseSection_id']}'>{$c['CourseSection']}</option>";
@@ -354,7 +354,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
         document.getElementById('m_lname').value = data.L_name;
         document.getElementById('m_role').value = data.Role;
         document.getElementById('m_status').value = data.Status;
-        document.getElementById('m_course').value = data.courseSection_id || '';
+        document.getElementById('m_course').value = data.CourseSection_id || '';
         toggleCourse();
         new bootstrap.Modal(document.getElementById('addEditModal')).show();
     }

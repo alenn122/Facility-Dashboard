@@ -151,12 +151,12 @@ if (!isset($_SESSION['id'])) {
                     <table class="table align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Log_id</th>
-                                <th>User_id</th>
-                                <th>Rfid_tag</th>
-                                <th>Room_Code</th>
-                                <th>Access_time</th>
-                                <th>Access_type</th>
+                                <th>User id</th>
+                                <th>Rfid tag</th>
+                                <th>Room Code</th>
+                                <th>Access type</th>
+                                <th>Access time</th>
+                                <th>Access</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -166,9 +166,11 @@ if (!isset($_SESSION['id'])) {
                             $log_id = $conn->query("
                             SELECT 
                                 access_log.*,
-                                classrooms.Room_code
+                                classrooms.Room_code,
+                                devices.device_type
                             FROM access_log
                             JOIN classrooms ON access_log.Room_id = classrooms.Room_id
+                            JOIN devices ON classrooms.Room_id = devices.room_id
                             ORDER BY access_log.Access_time DESC
                             LIMIT 10
                         ");
@@ -177,12 +179,14 @@ if (!isset($_SESSION['id'])) {
                             <?php if ($log_id->num_rows > 0): ?>
                                 <?php while ($row = $log_id->fetch_assoc()): ?>
                                     <tr>
-                                        <td><?php echo $row['Log_id']; ?></td>
+                                        <!-- <td><?php echo $row['Log_id']; ?></td> -->
                                         <td><?php echo $row['User_id']; ?></td>
                                         <td><?php echo $row['Rfid_tag']; ?></td>
                                         <td><?php echo $row['Room_code']; ?></td>
+                                        <td><?php echo $row['device_type']; ?></td>
                                         <td><?php echo $row['Access_time']; ?></td>
                                         <td><?php echo $row['Access_type']; ?></td>
+                                        
                                         <td>
                                             <span class="status <?php echo strtolower($row['Status']); ?>">
                                                 <?php echo $row['Status']; ?>

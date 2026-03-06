@@ -1,7 +1,19 @@
 <?php
+session_start();
 // Include your database connection file
 include 'conn.php';
 
+
+
+// Security & Cache Headers
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+
+// Auth Check
+if (!isset($_SESSION['id'])) {
+    header("Location: login.php");
+    exit();
+}
 // Update device status to Offline if last seen more than 5 seconds ago
 $conn->query("UPDATE devices SET status = 'Offline' WHERE last_seen < (NOW() - INTERVAL 5 SECOND)");
 
@@ -243,7 +255,6 @@ if (isset($_GET['edit_id'])) {
                                 <th>Device Type</th>
                                 <th>MAC Address</th>
                                 <th>Assigned Room</th>
-                                <th>Room Status</th>
                                 <th>Device Status</th>
                                 <th>Last Seen</th>
                                 <th class="text-end pe-4">Actions</th>
@@ -270,15 +281,6 @@ if (isset($_GET['edit_id'])) {
                                         </td>
                                         <td>
                                             <?php echo $row['Room_code'] ? htmlspecialchars($row['Room_code']) : '<span class="text-muted fst-italic">Unassigned</span>'; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($row['room_status'] == 'Occupied'): ?>
-                                                <span class="badge bg-danger">Occupied</span>
-                                            <?php elseif ($row['room_status'] == 'Unoccupied'): ?>
-                                                <span class="badge bg-success">Unoccupied</span>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php if ($row['device_status'] == 'Online'): ?>

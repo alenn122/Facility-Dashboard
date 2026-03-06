@@ -2,6 +2,10 @@
 session_start();
 include 'conn.php';
 
+// Security & Cache Headers
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+
 // --- BACKEND LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // SAVE / UPDATE USER
@@ -152,7 +156,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
             <ul class="nav nav-pills mb-4" id="userTabs" role="tablist">
                 <li class="nav-item">
                     <button class="nav-link active custom-pill" data-bs-toggle="pill" data-bs-target="#studentsTab" type="button">
-                        <i class="fas fa-user-graduate me-2"></i>Students <span class="badge ms-1"><?php echo $student_count; ?></span>
+                        <i class="fas fa-user-graduate me-2"></i>Students <span class="badge ms-1 bg-danger"><?php echo $student_count; ?></span>
                     </button>
                 </li>
                 <li class="nav-item">

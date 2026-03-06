@@ -1,3 +1,15 @@
+
+<?php
+//     // Security & Cache Headers
+// header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+// header("Pragma: no-cache");
+
+// // Auth Check
+// if (!isset($_SESSION['id'])) {
+//     header("Location: login.php");
+//     exit();
+// }
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -162,7 +174,7 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light sticky-top">
                             <tr>
-                                <th>Log_id</th>
+                                <!-- <th>Log_id</th> -->
                                 <th>User_id</th>
                                 <th>Role</th>
                                 <th>Room</th>
@@ -392,21 +404,27 @@
         });
 
         printConfirm.addEventListener('click', function() {
-            // Get print options
             const dateFrom = printDateFrom.value;
             const dateTo = printDateTo.value;
             const accessType = printAccessType.value;
             const status = printStatus.value;
             const room = printRoom.value;
             
-            // Generate print view
+            // 1. Generate the view
             generatePrintView(dateFrom, dateTo, accessType, status, room);
             
-            // Close modal
+            // 2. Close the modal
             printModal.style.display = 'none';
             
-            // Print the document
+            // 3. Open print dialog
             window.print();
+
+            // 4. CLEANUP: After the user prints or cancels, clear the hidden section
+            // We use a small timeout to ensure the printer has captured the data first
+            setTimeout(() => {
+                printSection.innerHTML = '';
+                printSection.style.display = 'none';
+            }, 500);
         });
 
         // Functions
@@ -512,7 +530,7 @@
                             const statusText = log.Status === 'granted' ? 'Granted' : 'Denied';
                             
                             row.innerHTML = `
-                                <td>${log.Log_id}</td>
+                                <!-- <td>${log.Log_id}</td> -->
                                 <td>${log.User_id || 'N/A'}</td>
                                 <td>${log.Role || 'N/A'}</td>
                                 <td>${log.Room}</td>
@@ -629,7 +647,7 @@
             const tableHeader = document.createElement('thead');
             tableHeader.innerHTML = `
                 <tr>
-                    <th>Log_id</th>
+                    <!-- <th>Log_id</th> -->
                     <th>User_id</th>
                     <th>Role</th>
                     <th>Room</th>
@@ -721,7 +739,7 @@
         }
 
         // Auto-refresh every 30 seconds (optional)
-        setInterval(loadLogs, 30000);
+        setInterval(loadLogs, 5000);
 
         // Sidebar toggle (from your script.js)
         const sidebar = document.getElementById('sidebar');
@@ -836,6 +854,7 @@
                     top: 0;
                     width: 100%;
                     background: white;
+                    display: block;
                 }
                 
                 .print-header {

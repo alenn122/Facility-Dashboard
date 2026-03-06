@@ -35,16 +35,14 @@ $mac  = isset($_POST['mac']) ? $_POST['mac'] : '';
 $rfid = isset($_POST['rfid']) ? $_POST['rfid'] : '';
 
 // 2. DEVICE & ROOM LOOKUP
-$device_sql = "SELECT d.room_id, d.device_type FROM devices d WHERE d.mac_address = '$mac' LIMIT 1";
+$device_sql = "SELECT d.room_id FROM devices d WHERE d.mac_address = '$mac' LIMIT 1";
 $device_query = $conn->query($device_sql);
-$device = $device_query->fetch_assoc();
-$room_id = $device['room_id'];
-$device_type = $device['device_type']; // 'DOOR' or 'POWER'
 
 if ($device_query->num_rows == 0) {
     echo "UNKNOWN DEVICE"; 
     exit();
 }
+$room_id = $device_query->fetch_assoc()['room_id'];
 
 // 3. USER LOOKUP
 $user_query = $conn->query("SELECT * FROM users WHERE Rfid_tag='$rfid' AND Status='Active'");
@@ -73,29 +71,17 @@ if ($last_granted_query->num_rows > 0) {
 $is_authorized = false;
 $sched_id = "NULL";
 
-if ($user['Role'] == 'Admin') {
-    // Admins (Maintenance/IT) have access to EVERYTHING at ANY TIME
+if ($user['Role'] == 'Admin' || $user['Role'] == 'Faculty') {
     $is_authorized = true;
-} 
-else if ($user['Role'] == 'Faculty') {
-    // Faculty must follow the schedule for BOTH Door and Power
-    $schedule = check_schedule($user_id, $room_id, $user['CourseSection_id']);
-    if ($schedule) {
-        $is_authorized = true;
-        $sched_id = $schedule['Schedule_id'];
-    }
-} 
-else if ($user['Role'] == 'Student') {
-    // Students ONLY get access if the device is a DOOR and they have a schedule
-    if ($device_type == 'DOOR') {
+} else {
+    if ($access_type == 'Entry') {
         $schedule = check_schedule($user_id, $room_id, $user['CourseSection_id']);
         if ($schedule) {
             $is_authorized = true;
             $sched_id = $schedule['Schedule_id'];
         }
     } else {
-        // Students are NEVER authorized for 'POWER' devices
-        $is_authorized = false;
+        $is_authorized = true; 
     }
 }
 
@@ -103,23 +89,18 @@ else if ($user['Role'] == 'Student') {
 if ($is_authorized) {
     log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted');
     
-    if ($device_type == 'DOOR') {
-        // Only open the door, don't touch the room status/power here 
-        // unless you want the first person in to trigger the lights
+    if ($access_type == 'Entry') {
+        $conn->query("UPDATE classrooms SET Status = 'Occupied' WHERE Room_id = '$room_id'");
+        // We send POWER_ON so the ESP32 turns on the lights (Pin 16) AND opens the door (Pin 17)
         echo "POWER_ON"; 
-    } 
-    else if ($device_type == 'POWER') {
-        if ($access_type == 'Entry') {
-            $conn->query("UPDATE classrooms SET Status = 'Occupied' WHERE Room_id = '$room_id'");
-            echo "POWER_ON";
-        } else {
-            $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
-            echo "POWER_OFF";
-        }
+    } else {
+        $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
+        // We send POWER_OFF to turn off the lights
+        echo "POWER_OFF"; 
     }
 } else {
     echo "DENIED";
-    log_access($user_id, $rfid, $room_id, null, $access_type, 'denied');
+    log_access($user_id, $rfid, $room_id, null, 'Entry', 'denied');
 }
 
 // --- FUNCTIONS ---

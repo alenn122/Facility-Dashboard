@@ -197,37 +197,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $isFirst = true;
 
             foreach ($tabConfig as $tabId => $where):
-                $sql = "SELECT * FROM classrooms $where ORDER BY Room_code";
-                $rooms = mysqli_query($conn, $sql);
             ?>
                 <div class="tab-pane fade <?php echo $isFirst ? 'show active' : ''; ?>" id="<?php echo $tabId; ?>">
-                    <div class="row g-4 room-grid-container">
-                        <?php if ($rooms && mysqli_num_rows($rooms) > 0): ?>
-                            <?php while ($row = mysqli_fetch_assoc($rooms)):
-                                $statusClass = (strtolower($row['Status']) == 'occupied') ? 'occupied' : 'unoccupied';
-                                $badgeClass = (strtolower($row['Status']) == 'occupied') ? 'bg-danger' : 'bg-success';
-                            ?>
-                                <div class="col-lg-6 room-item-card" data-room-name="<?= strtoupper($row['Room_code']) ?>">
-                                    <div class="room-card <?= $statusClass ?>">
-                                        <div class="room-card-header">
-                                            <h5><?= htmlspecialchars($row['Room_code']) ?></h5>
-                                            <span class="badge <?= $badgeClass ?>"><?= $row['Status'] ?></span>
-                                        </div>
-                                         <div class="room-card-header">
-                                            <h5 style="padding: 5px 5px; color: white; background-color: #007bff; border-radius: 5px; font-size: 18px;"><?= htmlspecialchars($row['FLOOR']) ?></h5>
-                                        </div>
-                                        <p class="mb-3">
-                                            <i class="fas fa-school"></i> Type: <?= htmlspecialchars($row['Classroom_type']) ?>
-                                        </p>
-                                        <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom(<?= $row['Room_id']; ?>, '<?= $row['Room_code']; ?>')">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <div class="col-12 text-center text-muted p-5">No rooms found in this category.</div>
-                        <?php endif; ?>
+                    <div class="row g-4 room-grid-container" id="container-<?php echo $tabId; ?>">
+                        <!-- Content will be loaded via AJAX -->
                     </div>
                 </div>
             <?php $isFirst = false;
@@ -321,6 +294,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
         }
+
+        // Real-time update function
+        function loadRooms() {
+            fetch('ajax/get_rooms.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tabConfig = {
+                            allRooms: () => true,
+                            unoccupiedRooms: room => room.Status.toLowerCase() === 'unoccupied',
+                            occupiedRooms: room => room.Status.toLowerCase() === 'occupied'
+                        };
+
+                        Object.keys(tabConfig).forEach(tabId => {
+                            const container = document.getElementById(`container-${tabId}`);
+                            const filter = tabConfig[tabId];
+                            const filteredRooms = data.rooms.filter(filter);
+
+                            let html = '';
+                            if (filteredRooms.length > 0) {
+                                filteredRooms.forEach(room => {
+                                    const statusClass = room.Status.toLowerCase() === 'occupied' ? 'occupied' : 'unoccupied';
+                                    const badgeClass = room.Status.toLowerCase() === 'occupied' ? 'bg-danger' : 'bg-success';
+                                    html += `
+                                        <div class="col-lg-6 room-item-card" data-room-name="${room.Room_code.toUpperCase()}">
+                                            <div class="room-card ${statusClass}">
+                                                <div class="room-card-header">
+                                                    <h5>${room.Room_code}</h5>
+                                                    <span class="badge ${badgeClass}">${room.Status}</span>
+                                                </div>
+                                                <div class="room-card-header">
+                                                    <h5 style="padding: 5px 5px; color: white; background-color: #007bff; border-radius: 5px; font-size: 18px;">${room.FLOOR}</h5>
+                                                </div>
+                                                <p class="mb-3">
+                                                    <i class="fas fa-school"></i> Type: ${room.Classroom_type}
+                                                </p>
+                                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom(${room.Room_id}, '${room.Room_code}')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                            } else {
+                                html = '<div class="col-12 text-center text-muted p-5">No rooms found in this category.</div>';
+                            }
+                            container.innerHTML = html;
+                        });
+
+                        // Re-apply search if any
+                        const searchInput = document.getElementById('roomSearchInput');
+                        if (searchInput.value) {
+                            searchInput.dispatchEvent(new Event('input'));
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading rooms:', error));
+        }
+
+        // Update every 5 seconds
+        setInterval(loadRooms, 5000);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadRooms);
     </script>
 
 

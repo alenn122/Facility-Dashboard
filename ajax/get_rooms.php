@@ -11,8 +11,8 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Get all rooms (distinct)
-$sql = "SELECT DISTINCT Room_code FROM classrooms ORDER BY Room_code";
+// Get all rooms with status
+$sql = "SELECT Room_id, Room_code, Capacity, Classroom_type, Status, FLOOR FROM classrooms ORDER BY Room_code";
 $result = $conn->query($sql);
 
 if (!$result) {
@@ -24,7 +24,7 @@ if (!$result) {
 $rooms = [];
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $rooms[] = $row['Room_code'];
+        $rooms[] = $row;
     }
 }
 

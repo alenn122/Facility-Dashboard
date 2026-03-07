@@ -1,7 +1,6 @@
-
 <?php 
-  include 'conn.php';
-  // Security & Cache Headers
+include 'conn.php';
+// Security & Cache Headers
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 ?>
@@ -22,13 +21,35 @@ header("Pragma: no-cache");
     <link rel="stylesheet" href="./css/bootstrap.min.css">
     <title>SCHEDULES</title>
     <style>
-     
+        .excel-btn {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+        .excel-btn:hover {
+            background-color: #218838 !important;
+            border-color: #1e7e34 !important;
+        }
+        .import-preview-table {
+            font-size: 0.9rem;
+        }
+        .import-preview-table .valid-row {
+            background-color: #d4edda;
+        }
+        .import-preview-table .invalid-row {
+            background-color: #f8d7da;
+        }
+        .error-list {
+            font-size: 0.8rem;
+            color: #dc3545;
+            margin: 0;
+            padding-left: 1rem;
+        }
     </style>
 </head>
 
 <body>
 
-        <!-- Mobile Toggle Button -->
+    <!-- Mobile Toggle Button -->
     <button class="btn btn-primary d-md-none m-2" id="openSidebar">
         <i class="fas fa-bars"></i>
     </button>
@@ -91,7 +112,6 @@ header("Pragma: no-cache");
             </a>
         </div>
     </div>
-    <!-- REUSABLE UNTIL HERE PARA SA SIDE BAR -->
     
     <div class="main-content p-4">
         <!-- Header -->
@@ -105,9 +125,6 @@ header("Pragma: no-cache");
                     </span>
                     <input type="text" id="searchInput" class="form-control" 
                            placeholder="Search by Code, Description, Faculty, Room...">
-                    <button type="button" id="searchBtn">
-                       
-                    </button>
                 </div>
             </div>
         </div>
@@ -171,6 +188,11 @@ header("Pragma: no-cache");
             <div class="col-md-6 col-lg-2">
                 <button class="main-btn w-100" id="addScheduleBtn">
                     <i class="fas fa-plus me-1"></i> Add Schedule
+                </button>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <button class="main-btn w-100 excel-btn" id="importExcelBtn">
+                    <i class="fas fa-file-excel me-1"></i> Import Excel
                 </button>
             </div>
         </div>
@@ -268,7 +290,6 @@ header("Pragma: no-cache");
                                 <label for="startTime" class="form-label">Start Time *</label>
                                 <div class="time-input-group">
                                     <input type="time" class="form-control" id="startTime" name="start_time" required>
-                                    <!-- <span class="input-group-text"><i class="fas fa-clock"></i></span> -->
                                 </div>
                             </div>
                             
@@ -276,7 +297,6 @@ header("Pragma: no-cache");
                                 <label for="endTime" class="form-label">End Time *</label>
                                 <div class="time-input-group">
                                     <input type="time" class="form-control" id="endTime" name="end_time" required>
-                                    <!-- <span class="input-group-text"><i class="fas fa-clock"></i></span> -->
                                 </div>
                             </div>
                             
@@ -302,6 +322,109 @@ header("Pragma: no-cache");
                 <div class="modal-footer">
                     <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="main-btn" id="saveScheduleBtn">Save Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Excel Modal -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel">
+                        <i class="fas fa-file-excel me-2" style="color: #28a745;"></i>
+                        Import Schedules from Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Template Download -->
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Excel File Requirements:</h6>
+                                <p class="small mb-2">Your Excel file must have these columns in this order:</p>
+                                <code>Subject Code | Course Section | Day | Start Time | End Time | Room Code | Faculty Email</code>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-success" id="downloadTemplateBtn">
+                                        <i class="fas fa-download me-1"></i> Download Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Form -->
+                    <form id="importExcelForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label fw-bold">Select Excel File</label>
+                            <input type="file" class="form-control" id="excelFile" name="excel_file" 
+                                   accept=".xlsx, .xls, .csv" required>
+                            <div class="form-text">Supported formats: .xlsx, .xls, .csv (Max size: 5MB)</div>
+                        </div>
+                        
+                        <!-- Import Options -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Import Options:</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="skipFirstRow" checked>
+                                    <label class="form-check-label" for="skipFirstRow">
+                                        Skip first row (headers)
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="updateExisting">
+                                    <label class="form-check-label" for="updateExisting">
+                                        Update existing schedules (if found)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="validateOnly">
+                                    <label class="form-check-label" for="validateOnly">
+                                        Validate only (don't import)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Progress Bar -->
+                    <div id="importProgress" style="display: none;">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                 id="importProgressBar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Area -->
+                    <div id="importPreview" style="display: none;">
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Preview</h6>
+                            <span class="badge bg-secondary" id="previewCount">0 rows</span>
+                        </div>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-sm table-bordered import-preview-table">
+                                <thead class="table-light">
+                                    <tr id="previewHeader"></tr>
+                                </thead>
+                                <tbody id="previewBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="previewSummary" class="mt-2 small"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="validateImportBtn" disabled>
+                        <i class="fas fa-check-circle me-1"></i> Validate
+                    </button>
+                    <button type="button" class="btn btn-success" id="processImportBtn" disabled>
+                        <i class="fas fa-upload me-1"></i> Import
+                    </button>
                 </div>
             </div>
         </div>

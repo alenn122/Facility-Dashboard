@@ -160,7 +160,7 @@ if (!isset($_SESSION['id'])) {
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="accessLogsTableBody">
 
                             <?php
                             $log_id = $conn->query("
@@ -221,6 +221,42 @@ if (!isset($_SESSION['id'])) {
     <!-- JAVASCRIPT -->
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
+    <script>
+        function updateAccessLogs() {
+            fetch('ajax/get_access_logs.php?limit=10')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.getElementById('accessLogsTableBody');
+                        tbody.innerHTML = '';
+                        
+                        if (data.logs.length > 0) {
+                            data.logs.forEach(log => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${log.User_id}</td>
+                                    <td>${log.Rfid_tag}</td>
+                                    <td>${log.Room_code}</td>
+                                    <td>${log.device_type}</td>
+                                    <td>${log.Access_time}</td>
+                                    <td>${log.Access_type}</td>
+                                    <td><span class="status ${log.Status.toLowerCase()}">${log.Status}</span></td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No records found.</td></tr>';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching access logs:', error));
+        }
+
+        // Update every 5 seconds
+        setInterval(updateAccessLogs, 5000);
+
+        // Initial load is already done by PHP
+    </script>
 </body>
 
 </html>

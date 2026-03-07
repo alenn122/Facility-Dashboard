@@ -29,19 +29,23 @@ error_log("Status: $status, Room: $room, Access Type: $access_type, Search: $sea
 $sql = "SELECT 
             al.Log_id,
             al.User_id,
+            al.Rfid_tag,
             u.Role,
-            r.Room_code AS Room,
+            r.Room_code AS Room_code,
+            d.device_type,
             al.Access_time,
             al.Access_type,
             al.Status
         FROM access_log al
         LEFT JOIN users u ON al.User_id = u.User_id
         LEFT JOIN classrooms r ON al.Room_id = r.Room_id
+        LEFT JOIN devices d ON r.Room_id = d.room_id
         WHERE 1=1";
 
 $sql_count = "SELECT COUNT(*) as total FROM access_log al
               LEFT JOIN users u ON al.User_id = u.User_id
               LEFT JOIN classrooms r ON al.Room_id = r.Room_id
+              LEFT JOIN devices d ON r.Room_id = d.room_id
               WHERE 1=1";
 
 $conditions = [];

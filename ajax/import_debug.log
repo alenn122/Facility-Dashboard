@@ -1,0 +1,24 @@
+[09-Mar-2026 14:06:04 Europe/Berlin] PHP Fatal error:  Uncaught Error: Class "PhpOffice\PhpSpreadsheet\Shared\File" not found in C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php:170
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php(137): PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile('C:\\xampp\\tmp\\ph...', NULL)
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\import_schedule.php(52): PhpOffice\PhpSpreadsheet\IOFactory::load('C:\\xampp\\tmp\\ph...')
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php on line 170
+[09-Mar-2026 14:06:26 Europe/Berlin] PHP Fatal error:  Uncaught Error: Class "PhpOffice\PhpSpreadsheet\Shared\File" not found in C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php:170
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php(137): PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile('C:\\xampp\\tmp\\ph...', NULL)
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\import_schedule.php(52): PhpOffice\PhpSpreadsheet\IOFactory::load('C:\\xampp\\tmp\\ph...')
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\PhpSpreadsheet\src\PhpSpreadsheet\IOFactory.php on line 170
+[09-Mar-2026 15:55:37 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 15:58:06 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:00:53 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:01:27 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:01:59 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:04:58 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:06:00 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[09-Mar-2026 16:08:51 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
+[09-Mar-2026 16:09:06 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
+[09-Mar-2026 16:09:52 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
+[09-Mar-2026 16:09:55 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
+[09-Mar-2026 16:10:22 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'

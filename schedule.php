@@ -345,8 +345,9 @@ header("Pragma: no-cache");
                             <i class="fas fa-info-circle fa-2x me-3"></i>
                             <div>
                                 <h6 class="fw-bold mb-1">Excel File Requirements:</h6>
-                                <p class="small mb-2">Your Excel file must have these columns in this order:</p>
-                                <code>Subject Code | Course Section | Day | Start Time | End Time | Room Code | Faculty Email</code>
+                                <p class="small mb-2">Your Excel file must have these <strong>8 columns</strong> in this exact order:</p>
+                                <code>Code | Description | Course Section | Day | Start Time | End Time | Room Code | Faculty Name</code>
+                                <p class="small text-danger mb-0 mt-1"><i class="fas fa-exclamation-triangle"></i> <strong>Important:</strong> Same format as provided</p>
                                 <div class="mt-2">
                                     <button class="btn btn-sm btn-outline-success" id="downloadTemplateBtn">
                                         <i class="fas fa-download me-1"></i> Download Template
@@ -379,6 +380,12 @@ header("Pragma: no-cache");
                                     <input class="form-check-input" type="checkbox" id="updateExisting">
                                     <label class="form-check-label" for="updateExisting">
                                         Update existing schedules (if found)
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoCreateMissing">
+                                    <label class="form-check-label" for="autoCreateMissing">
+                                        Auto-create missing subjects, rooms, and course sections
                                     </label>
                                 </div>
                                 <div class="form-check">
@@ -437,7 +444,7 @@ header("Pragma: no-cache");
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
-    <script src="js/schedule.js"></script>
+    <script src="js/schedule.js?v=2.0"></script>
     
 </body>
 </html>

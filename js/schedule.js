@@ -1,4 +1,4 @@
-console.log('Schedule module loaded - UPDATED WITH EXCEL IMPORT');
+console.log('Schedule module loaded - UPDATED WITH EXCEL IMPORT v2.0');
 
 // Global variables
 let scheduleModal = null;
@@ -479,10 +479,11 @@ function openImportModal() {
 
 // Download template
 function downloadTemplate() {
-    const headers = ['Subject Code', 'Course Section', 'Day', 'Start Time', 'End Time', 'Room Code', 'Faculty Email'];
+    const headers = ['Code', 'Description', 'Course Section', 'Day', 'Start Time', 'End Time', 'Room Code', 'Faculty Name'];
     const sampleData = [
-        ['IT101', 'BSCS-2A', 'Mon', '08:00', '09:30', 'LAB101', 'john.doe@lyceum.edu'],
-        ['ENGL101', 'BSIT-1B', 'Wed', '10:00', '11:30', 'RM203', 'jane.smith@lyceum.edu']
+        ['IT101', 'Introduction to Programming', 'BSCS-2A', 'Mon', '08:00', '09:30', 'LAB101', 'John Doe'],
+        ['ENGL101', 'English Composition', 'BSIT-1B', 'Wed', '10:00', '11:30', 'RM203', 'Jane Smith'],
+        ['', '', '', '(Mon/Tue/Wed/Thu/Fri/Sat/Sun or full names)', '(24-hour)', '(24-hour)', '', '(Full name)']
     ];
     
     let csvContent = headers.join(',') + '\n';
@@ -513,6 +514,7 @@ function validateImport() {
     formData.append('excel_file', file);
     formData.append('action', 'validate');
     formData.append('skip_first_row', document.getElementById('skipFirstRow').checked);
+    formData.append('auto_create_missing', document.getElementById('autoCreateMissing').checked);
     
     Swal.fire({
         title: 'Validating...',
@@ -555,8 +557,9 @@ function displayImportPreview(data) {
     
     // Set header
     previewHeader.innerHTML = `
-        <th>#</th>
-        <th>Subject</th>
+       
+        <th>Code</th>
+        <th>Description</th>
         <th>Section</th>
         <th>Day</th>
         <th>Start</th>
@@ -576,23 +579,24 @@ function displayImportPreview(data) {
             const tr = document.createElement('tr');
             tr.className = row.valid ? 'valid-row' : 'invalid-row';
             
-            let statusHtml = row.valid 
+            let statusHtml = row.valid
                 ? '<span class="badge bg-success">Valid</span>'
                 : `<span class="badge bg-danger">Invalid</span>
-                   <small class="d-block text-danger">${(row.errors || []).join(', ')}</small>`;
+                   <small class="d-block text-danger mt-1">${(row.errors || []).map(err => `• ${err}`).join('<br>')}</small>`;
             
             if (row.valid) validCount++;
             else invalidCount++;
             
             tr.innerHTML = `
-                <td>${row.row || ''}</td>
+               
                 <td>${escapeHtml(row.subject_code || '')}</td>
+                <td>${escapeHtml(row.subject_description || '')}</td>
                 <td>${escapeHtml(row.course_section || '')}</td>
                 <td>${escapeHtml(row.day || '')}</td>
                 <td>${escapeHtml(row.start_time || '')}</td>
                 <td>${escapeHtml(row.end_time || '')}</td>
                 <td>${escapeHtml(row.room_code || '')}</td>
-                <td>${escapeHtml(row.faculty_email || '')}</td>
+                <td>${escapeHtml(row.faculty_name || '')}</td>
                 <td>${statusHtml}</td>
             `;
             previewBody.appendChild(tr);
@@ -628,6 +632,7 @@ function processImport() {
     formData.append('action', 'import');
     formData.append('skip_first_row', document.getElementById('skipFirstRow').checked);
     formData.append('update_existing', document.getElementById('updateExisting').checked);
+    formData.append('auto_create_missing', document.getElementById('autoCreateMissing').checked);
     
     Swal.fire({
         title: 'Importing...',

@@ -47,6 +47,7 @@ try {
     $action = $_POST['action'] ?? 'validate';
     $skipFirstRow = isset($_POST['skip_first_row']) && $_POST['skip_first_row'] === 'true';
     $updateExisting = isset($_POST['update_existing']) && $_POST['update_existing'] === 'true';
+    $autoCreateMissing = isset($_POST['auto_create_missing']) && $_POST['auto_create_missing'] === 'true';
     
     // Load the spreadsheet
     $spreadsheet = IOFactory::load($file);
@@ -76,14 +77,20 @@ try {
             continue;
         }
         
-        // Expected columns
+        // Expected columns: Code | Description | Course Section | Day | Start Time | End Time | Room Code | Faculty Name
         $subjectCode = trim($row[0] ?? '');
-        $courseSection = trim($row[1] ?? '');
-        $day = trim($row[2] ?? '');
-        $startTime = trim($row[3] ?? '');
-        $endTime = trim($row[4] ?? '');
-        $roomCode = trim($row[5] ?? '');
-        $facultyEmail = trim($row[6] ?? '');
+        $subjectDescription = trim($row[1] ?? '');
+        $courseSection = trim($row[2] ?? '');
+        $day = trim($row[3] ?? '');
+        $startTime = trim($row[4] ?? '');
+        $endTime = trim($row[5] ?? '');
+        $roomCode = trim($row[6] ?? '');
+        $facultyName = trim($row[7] ?? '');
+        
+        // If description is empty, use code as description
+        if (empty($subjectDescription)) {
+            $subjectDescription = $subjectCode;
+        }
         
         // Validate required fields
         $rowErrors = [];
@@ -98,8 +105,27 @@ try {
         
         if (empty($day)) {
             $rowErrors[] = 'Day is required';
-        } elseif (!in_array($day, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])) {
-            $rowErrors[] = 'Invalid day format. Use Mon, Tue, Wed, Thu, Fri, Sat, Sun';
+        } else {
+            // Convert full day names to abbreviations
+            $dayMap = [
+                'Monday' => 'Mon',
+                'Tuesday' => 'Tue',
+                'Wednesday' => 'Wed',
+                'Thursday' => 'Thu',
+                'Friday' => 'Fri',
+                'Saturday' => 'Sat',
+                'Sunday' => 'Sun'
+            ];
+            
+            // Check if it's a full day name and convert it
+            if (isset($dayMap[$day])) {
+                $day = $dayMap[$day];
+            }
+            
+            // Validate the day format
+            if (!in_array($day, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])) {
+                $rowErrors[] = 'Invalid day format. Use Mon, Tue, Wed, Thu, Fri, Sat, Sun or full day names';
+            }
         }
         
         if (empty($startTime)) {
@@ -114,15 +140,14 @@ try {
             $rowErrors[] = 'Room Code is required';
         }
         
-        if (empty($facultyEmail)) {
-            $rowErrors[] = 'Faculty Email is required';
+        if (empty($facultyName)) {
+            $rowErrors[] = 'Faculty Name is required';
         }
         
         $subjectId = null;
         $courseSectionId = null;
         $roomId = null;
         $facultyId = null;
-        $facultyName = '';
         
         // If no validation errors, check database references
         if (empty($rowErrors)) {
@@ -135,7 +160,16 @@ try {
             $stmt->close();
             
             if (!$subjectId) {
-                $rowErrors[] = "Subject '$subjectCode' not found";
+                if ($autoCreateMissing && $action === 'import') {
+                    // Auto-create subject with both code and description
+                    $stmt = $conn->prepare("INSERT INTO subject (Code, Description) VALUES (?, ?)");
+                    $stmt->bind_param('ss', $subjectCode, $subjectDescription);
+                    $stmt->execute();
+                    $subjectId = $stmt->insert_id;
+                    $stmt->close();
+                } else {
+                    $rowErrors[] = "Subject '$subjectCode' not found";
+                }
             }
             
             // Get Course Section ID
@@ -147,7 +181,16 @@ try {
             $stmt->close();
             
             if (!$courseSectionId) {
-                $rowErrors[] = "Course Section '$courseSection' not found";
+                if ($autoCreateMissing && $action === 'import') {
+                    // Auto-create course section
+                    $stmt = $conn->prepare("INSERT INTO course_section (CourseSection) VALUES (?)");
+                    $stmt->bind_param('s', $courseSection);
+                    $stmt->execute();
+                    $courseSectionId = $stmt->insert_id;
+                    $stmt->close();
+                } else {
+                    $rowErrors[] = "Course Section '$courseSection' not found";
+                }
             }
             
             // Get Room ID
@@ -159,39 +202,77 @@ try {
             $stmt->close();
             
             if (!$roomId) {
-                $rowErrors[] = "Room '$roomCode' not found";
+                if ($autoCreateMissing && $action === 'import') {
+                    // Auto-create room
+                    $stmt = $conn->prepare("INSERT INTO classrooms (Room_code) VALUES (?)");
+                    $stmt->bind_param('s', $roomCode);
+                    $stmt->execute();
+                    $roomId = $stmt->insert_id;
+                    $stmt->close();
+                } else {
+                    $rowErrors[] = "Room '$roomCode' not found";
+                }
             }
             
-            // Get Faculty ID
-            $stmt = $conn->prepare("SELECT User_id, CONCAT(F_name, ' ', L_name) FROM users WHERE Email = ? AND Role IN ('Faculty', 'Admin')");
-            $stmt->bind_param('s', $facultyEmail);
-            $stmt->execute();
-            $stmt->bind_result($facultyId, $facultyName);
-            $stmt->fetch();
-            $stmt->close();
-            
-            if (!$facultyId) {
-                $rowErrors[] = "Faculty with email '$facultyEmail' not found";
+            // Get Faculty ID by name
+            if (!empty($facultyName)) {
+                // Try exact match first
+                $stmt = $conn->prepare("SELECT User_id FROM users WHERE CONCAT(F_name, ' ', L_name) = ? AND Role IN ('Faculty', 'Admin')");
+                $stmt->bind_param('s', $facultyName);
+                $stmt->execute();
+                $stmt->bind_result($facultyId);
+                $stmt->fetch();
+                $stmt->close();
+                
+                // If not found, try case-insensitive match
+                if (!$facultyId) {
+                    $stmt = $conn->prepare("SELECT User_id FROM users WHERE LOWER(CONCAT(F_name, ' ', L_name)) = LOWER(?) AND Role IN ('Faculty', 'Admin')");
+                    $stmt->bind_param('s', $facultyName);
+                    $stmt->execute();
+                    $stmt->bind_result($facultyId);
+                    $stmt->fetch();
+                    $stmt->close();
+                }
+                
+                if (!$facultyId) {
+                    $rowErrors[] = "Faculty '$facultyName' not found in database";
+                }
             }
             
             // Format times
-            if (!empty($startTime) && strpos($startTime, ':') === false) {
-                // Convert Excel time if needed
-                if (is_numeric($startTime)) {
-                    try {
-                        $startTime = Date::excelToDateTimeObject($startTime)->format('H:i');
-                    } catch (Exception $e) {
-                        $rowErrors[] = 'Invalid start time format';
+            if (!empty($startTime)) {
+                if (strpos($startTime, ':') === false) {
+                    // Convert Excel time if needed
+                    if (is_numeric($startTime)) {
+                        try {
+                            $startTime = Date::excelToDateTimeObject($startTime)->format('H:i');
+                        } catch (Exception $e) {
+                            $rowErrors[] = 'Invalid start time format';
+                        }
+                    }
+                } else {
+                    // Normalize time format (e.g., 9:00 to 09:00)
+                    $timeParts = explode(':', $startTime);
+                    if (count($timeParts) == 2) {
+                        $startTime = sprintf('%02d:%02d', (int)$timeParts[0], (int)$timeParts[1]);
                     }
                 }
             }
             
-            if (!empty($endTime) && strpos($endTime, ':') === false) {
-                if (is_numeric($endTime)) {
-                    try {
-                        $endTime = Date::excelToDateTimeObject($endTime)->format('H:i');
-                    } catch (Exception $e) {
-                        $rowErrors[] = 'Invalid end time format';
+            if (!empty($endTime)) {
+                if (strpos($endTime, ':') === false) {
+                    if (is_numeric($endTime)) {
+                        try {
+                            $endTime = Date::excelToDateTimeObject($endTime)->format('H:i');
+                        } catch (Exception $e) {
+                            $rowErrors[] = 'Invalid end time format';
+                        }
+                    }
+                } else {
+                    // Normalize time format (e.g., 21:00 to 21:00, 9:00 to 09:00)
+                    $timeParts = explode(':', $endTime);
+                    if (count($timeParts) == 2) {
+                        $endTime = sprintf('%02d:%02d', (int)$timeParts[0], (int)$timeParts[1]);
                     }
                 }
             }
@@ -217,12 +298,13 @@ try {
         $rowData = [
             'row' => $rowNumber,
             'subject_code' => $subjectCode,
+            'subject_description' => $subjectDescription,
             'course_section' => $courseSection,
             'day' => $day,
             'start_time' => $startTime,
             'end_time' => $endTime,
             'room_code' => $roomCode,
-            'faculty_email' => $facultyEmail,
+            'faculty_name' => $facultyName,
             'errors' => $rowErrors,
             'valid' => $isValid
         ];

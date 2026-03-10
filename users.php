@@ -289,8 +289,8 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                     </div>
                     <div class="mb-3" id="m_course_container">
                         <label class="form-label small">Course Section</label>
-                        <select name="course_id" id="m_course" class="form-select" required>
-                             <option value="">None</option> 
+                        <select name="course_id" id="m_course" class="form-select">
+                             <option value="">None</option>
                             <?php
                             $cRes = mysqli_query($conn, "SELECT * FROM course_section");
                             while($c = mysqli_fetch_assoc($cRes)) echo "<option value='{$c['CourseSection_id']}'>{$c['CourseSection']}</option>";
@@ -406,7 +406,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
     <?php unset($_SESSION['success_message']); endif; ?>
 
     <?php if (isset($_SESSION['error_message'])): ?>
-    <script>Swal.fire({ icon: 'error', title: 'Error', text: <?= json_encode($_SESSION['error_message']) ?>, showConfirmButton: true });</script>
+    <script>Swal.fire({ icon: 'warning', title: 'Warning', text: <?= json_encode($_SESSION['error_message']) ?>, showConfirmButton: true });</script>
     <?php unset($_SESSION['error_message']); endif; ?>
 
 </body>

@@ -110,14 +110,14 @@ if (!isset($_SESSION['id'])) {
         <!-- Dashboard Cards -->
         <div class="row g-4 mb-4">
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-3 col-md-6" href="rooms.php">
                 <div class="dashboard-card">
                     <h2><?php echo $totalroom['total']; ?></h2>
                     <p>Total Rooms</p>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-3 col-md-6" href="users.php">
                 <div class="dashboard-card">
                     <h2><?php echo $totalusers['total']; ?></h2>
                     <p>Total Users</p>
@@ -151,7 +151,7 @@ if (!isset($_SESSION['id'])) {
                     <table class="table align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>User id</th>
+                                <th>Role</th>
                                 <th>Rfid tag</th>
                                 <th>Room Code</th>
                                 <th>Access type</th>
@@ -165,14 +165,24 @@ if (!isset($_SESSION['id'])) {
                             <?php
                             $log_id = $conn->query("
                             SELECT 
-                                access_log.*,
-                                classrooms.Room_code,
-                                devices.device_type
-                            FROM access_log
-                            JOIN classrooms ON access_log.Room_id = classrooms.Room_id
-                            JOIN devices ON classrooms.Room_id = devices.room_id
-                            ORDER BY access_log.Access_time DESC
-                            LIMIT 10
+                                    al.Log_id,
+                                    al.Rfid_tag,
+                                    al.Access_time,
+                                    al.Access_type,
+                                    al.Status,
+                                    u.Role,
+                                    r.Room_code,
+                                    -- Logic to display device type without needing a Join
+                                    CASE 
+                                        WHEN al.Access_type IN ('Entry', 'Exit') AND u.Role = 'Student' THEN 'DOOR'
+                                        WHEN al.Status = 'granted' AND u.Role IN ('Faculty', 'Admin') THEN 'DOOR & POWER'
+                                        ELSE 'DOOR'
+                                    END AS device_type
+                                FROM access_log al
+                                LEFT JOIN users u ON al.User_id = u.User_id
+                                LEFT JOIN classrooms r ON al.Room_id = r.Room_id
+                                ORDER BY al.Access_time DESC
+                                LIMIT 10
                         ");
                             ?>
 
@@ -180,13 +190,12 @@ if (!isset($_SESSION['id'])) {
                                 <?php while ($row = $log_id->fetch_assoc()): ?>
                                     <tr>
                                         <!-- <td><?php echo $row['Log_id']; ?></td> -->
-                                        <td><?php echo $row['User_id']; ?></td>
+                                        <td><?php echo $row['Role']; ?></td>
                                         <td><?php echo $row['Rfid_tag']; ?></td>
                                         <td><?php echo $row['Room_code']; ?></td>
-                                        <td><?php echo $row['device_type']; ?></td>
-                                        <td><?php echo $row['Access_time']; ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo $row['device_type']; ?></span></td>
+                                        <td><?php echo date('M d, Y h:i A', strtotime($row['Access_time'])); ?></td>
                                         <td><?php echo $row['Access_type']; ?></td>
-                                        
                                         <td>
                                             <span class="status <?php echo strtolower($row['Status']); ?>">
                                                 <?php echo $row['Status']; ?>
@@ -196,7 +205,7 @@ if (!isset($_SESSION['id'])) {
                                 <?php endwhile; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="text-center">No records found.</td>
+                                    <td colspan="7" class="text-center text-muted">No recent access records found.</td>
                                 </tr>
                             <?php endif; ?>
 
@@ -234,7 +243,7 @@ if (!isset($_SESSION['id'])) {
                             data.logs.forEach(log => {
                                 const row = document.createElement('tr');
                                 row.innerHTML = `
-                                    <td>${log.User_id}</td>
+                                    <td>${log.Role}</td>
                                     <td>${log.Rfid_tag}</td>
                                     <td>${log.Room_code}</td>
                                     <td>${log.device_type}</td>

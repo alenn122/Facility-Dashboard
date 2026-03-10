@@ -23,8 +23,6 @@
     <!-- CSS -->
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/bootstrap.min.css">
-    <!-- ANALYTICS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>ACCESS LOGS</title>
 </head>
 
@@ -106,74 +104,10 @@
                         <i class="fas fa-search"></i>
                     </span>
                     <input type="text" id="searchInput" class="form-control" 
-                           placeholder="Search by Name, RFID, Room...">
-                    <!-- <button type="button" id="searchBtn">
-                        <i class="fas fa-search"></i>
-                    </button> -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- ANALYTICS -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-primary text-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="text-uppercase small mb-1">Total Taps (Today)</h6>
-                            <h2 class="mb-0 fw-bold" id="todayTaps">0</h2>
-                        </div>
-                        <i class="fas fa-fingerprint fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-success text-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="text-uppercase small mb-1">Energy Saving Events</h6>
-                            <h2 class="mb-0 fw-bold" id="energyEvents">0</h2>
-                        </div>
-                        <i class="fas fa-leaf fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-danger text-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="text-uppercase small mb-1">Unauthorized Attempts</h6>
-                            <h2 class="mb-0 fw-bold" id="deniedTaps">0</h2>
-                        </div>
-                        <i class="fas fa-shield-alt fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 bg-dark text-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="text-uppercase small mb-1">Peak Room</h6>
-                            <h2 class="mb-0 fw-bold" id="peakRoom" style="font-size: 1.2rem;">Loading...</h2>
-                        </div>
-                        <i class="fas fa-door-open fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line me-2 text-primary"></i> 24-Hour Usage Trend</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="usageChart" height="100"></canvas>
-                    </div>
+                           placeholder="Search by Log ID, User ID, RFID, Room...">
+                    <button type="button" id="searchBtn">
+                        <!-- <i class="fas fa-search"></i> -->
+                    </button>
                 </div>
             </div>
         </div>
@@ -241,12 +175,11 @@
                         <thead class="table-light sticky-top">
                             <tr>
                                 <!-- <th>Log_id</th> -->
-                                <th>User Name</th>
+                                <th>User_id</th>
                                 <th>Role</th>
                                 <th>Room</th>
-                                <th>Access_Type</th>
                                 <th>Access_time</th>
-                                <th>Access</th>
+                                <th>Access_type</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -316,19 +249,17 @@
     </div>
 
     <!-- Hidden print section (only visible during printing) -->
-    <div id="printSection"></div>
+    <div id="printSection" style="display: none;"></div>
 
     <!-- JAVASCRIPT -->
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
     
     <script>
-    let myChart = null; 
-    let lastLogId = null;
     document.addEventListener('DOMContentLoaded', function() {
         // DOM Elements
         const searchInput = document.getElementById('searchInput');
-        // const searchBtn = document.getElementById('searchBtn');
+        const searchBtn = document.getElementById('searchBtn');
         const statusFilter = document.getElementById('statusFilter');
         const roomFilter = document.getElementById('roomFilter');
         const typeFilter = document.getElementById('typeFilter');
@@ -383,12 +314,12 @@
         printDateTo.valueAsDate = today;
 
         // Event Listeners
-        // searchBtn.addEventListener('click', function() {
-        //     currentPage = 1;
-        //     currentFilters.search = searchInput.value;
-        //     console.debug('Search button clicked, search term:', currentFilters.search);
-        //     loadLogs();
-        // });
+        searchBtn.addEventListener('click', function() {
+            currentPage = 1;
+            currentFilters.search = searchInput.value;
+            console.debug('Search button clicked, search term:', currentFilters.search);
+            loadLogs();
+        });
 
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -473,103 +404,29 @@
         });
 
         printConfirm.addEventListener('click', function() {
-            const filters = {
-                status: printStatus.value,
-                room: printRoom.value,
-                access_type: printAccessType.value,
-                from_date: printDateFrom.value,
-                to_date: printDateTo.value
-            };
-
-            const queryParams = new URLSearchParams(filters).toString();
+            const dateFrom = printDateFrom.value;
+            const dateTo = printDateTo.value;
+            const accessType = printAccessType.value;
+            const status = printStatus.value;
+            const room = printRoom.value;
             
-            // Change button state to show it's working
-            printConfirm.disabled = true;
-            printConfirm.textContent = 'Preparing...';
+            // 1. Generate the view
+            generatePrintView(dateFrom, dateTo, accessType, status, room);
+            
+            // 2. Close the modal
+            printModal.style.display = 'none';
+            
+            // 3. Open print dialog
+            window.print();
 
-            // Change the URL line to this:
-            fetch(`ajax/get_access_logs.php?action=print&${queryParams}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        renderPrintSection(data.logs, filters);
-                        printModal.style.display = 'none';
-                        
-                        // Small delay to let browser render the hidden div
-                        setTimeout(() => {
-                            window.print();
-                            printConfirm.disabled = false;
-                            printConfirm.textContent = 'Print';
-                        }, 500);
-                    }
-                })
-                .catch(err => {
-                    console.error("Print Error:", err);
-                    alert("Failed to generate report.");
-                    printConfirm.disabled = false;
-                });
+            // 4. CLEANUP: After the user prints or cancels, clear the hidden section
+            // We use a small timeout to ensure the printer has captured the data first
+            setTimeout(() => {
+                printSection.innerHTML = '';
+                printSection.style.display = 'none';
+            }, 500);
         });
 
-       function renderPrintSection(logs, filters) {
-        const printSection = document.getElementById('printSection');
-        printSection.innerHTML = `
-            <div class="print-header">
-                <img src="img/loalogo.png" style="width: 80px;">
-                <h2 style="margin-top: 10px;">Access Logs Report</h2>
-                <p>Lyceum of San Pedro - Facility Control System</p>
-                <p>Generated on: ${new Date().toLocaleString()}</p>
-            </div>
-            <div class="print-filters" style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                <strong>Filters applied:</strong> 
-                Room: ${filters.room}, Status: ${filters.status}, Type: ${filters.access_type} 
-                ${filters.from_date ? `| Range: ${filters.from_date} to ${filters.to_date}` : ''}
-            </div>
-            <table class="print-table" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background-color: #eee;">
-                        <th style="border: 1px solid #ddd; padding: 8px;">User Name</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Role</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Room</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Device</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Time</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Access</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${logs.map(log => {
-                        // Fallback logic: Try names first, then RFID, then Guest
-                        let displayName = "Guest";
-                        if (log.F_name || log.L_name) {
-                            displayName = `${log.F_name || ''} ${log.L_name || ''}`.trim();
-                        } else if (log.Rfid_tag) {
-                            displayName = `Unknown (${log.Rfid_tag})`;
-                        }
-
-                        return `
-                            <tr>
-                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>${displayName}</strong></td>
-                                <td style="border: 1px solid #ddd; padding: 8px;">${log.Role || 'N/A'}</td>
-                                <td style="border: 1px solid #ddd; padding: 8px;">${log.Room_code}</td> 
-                                <td style="border: 1px solid #ddd; padding: 8px;"><small>${log.device_type || 'N/A'}</small></td>
-                                <td style="border: 1px solid #ddd; padding: 8px;">${log.Access_time}</td>
-                                <td style="border: 1px solid #ddd; padding: 8px;">${log.Access_type}</td>
-                                <td style="border: 1px solid #ddd; padding: 8px;">
-                                    <span style="text-transform: uppercase; font-weight: bold; color: ${log.Status === 'granted' ? '#28a745' : '#dc3545'};">
-                                        ${log.Status}
-                                    </span>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-            <div class="print-footer" style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
-                <p>Total Records: <strong>${logs.length}</strong></p>
-                <p style="font-size: 12px; color: #666;">End of Report - Lyceum of San Pedro Smart Classroom System</p>
-            </div>
-        `;
-    }
         // Functions
         function loadRoomOptions() {
             fetch('ajax/get_rooms.php')
@@ -582,8 +439,9 @@
                         }
                         // Add room options
                         data.rooms.forEach(room => {
+                            console.log(room);
                             const option = document.createElement('option');
-                            option.value = room.Room_code;        // access property
+                            option.value = room.Room_code;
                             option.textContent = room.Room_code;
                             roomFilter.appendChild(option);
                         });
@@ -621,9 +479,13 @@
         }
 
         function loadLogs() {
-            // Force a visual reset when filters are active so the user knows it's loading
+            // Show loading, hide others
             loadingSpinner.style.display = 'block';
-            
+            logsContainer.style.display = 'none';
+            noResults.style.display = 'none';
+            pagination.style.display = 'none';
+
+            // Get filter values
             const filters = {
                 status: currentFilters.status,
                 room: currentFilters.room,
@@ -633,57 +495,74 @@
                 limit: itemsPerPage
             };
 
+            // Build query string
             const queryParams = new URLSearchParams(filters).toString();
-            
-            // Change the URL line to this:
-            fetch(`ajax/get_access_logs.php?action=table&${queryParams}`)
-                .then(response => response.json())
-                .then(data => {
-                    loadingSpinner.style.display = 'none';
-                    
-                    // If no data found, show the 'No Results' div
-                    if (!data.success || !data.logs || data.logs.length === 0) {
-                        logsContainer.style.display = 'none';
-                        noResults.style.display = 'block';
-                        recordCount.textContent = `0 records`;
-                        return;
+            const url = `ajax/get_access_logs.php?${queryParams}`;
+            console.debug('Loading logs with filters:', filters, 'URL:', url);
+
+            // Make AJAX request
+            fetch(url)
+                .then(response => {
+                    console.debug('Fetch response status:', response.status);
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error('Server error response:', response.status, text);
+                            throw new Error('Server returned ' + response.status);
+                        });
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    console.debug('Data received from get_access_logs:', data);
+                    loadingSpinner.style.display = 'none';
 
-                    noResults.style.display = 'none';
-                    logsContainer.style.display = 'block';
-                    
-                    // Update tracker and count
-                    totalRecords = data.total;
-                    recordCount.textContent = `${data.total} records`;
-                    
-                    // Clear and rebuild
-                    logsTableBody.innerHTML = '';
-                    
-                    data.logs.forEach(log => {
-                        const statusClass = log.Status.toLowerCase() === 'granted' ? 'granted' : 'denied';
+                    if (data.success && data.logs && data.logs.length > 0) {
+                        totalRecords = data.total;
+                        recordCount.textContent = `${data.total} records`;
                         
-                        // Combine names. If both are missing, show Guest/Unknown
-                        let displayName = "Guest";
-                        if (log.F_name || log.L_name) {
-                            displayName = `${log.F_name || ''} ${log.L_name || ''}`.trim();
-                        } else if (log.Rfid_tag) {
-                            displayName = `Unknown (${log.Rfid_tag})`;
-                        }
-
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><strong>${displayName}</strong></td>
-                            <td>${log.Role || 'N/A'}</td>
-                            <td>${log.Room_code}</td> 
-                            <td><small>${log.device_type || 'N/A'}</small></td> 
-                            <td>${log.Access_time}</td>
-                            <td>${log.Access_type}</td>
-                            <td><span class="status ${statusClass}">${log.Status}</span></td>
-                        `;
-                        logsTableBody.appendChild(row);
-                    });
-
-                    updatePagination();
+                        // Clear previous logs
+                        logsTableBody.innerHTML = '';
+                        
+                        // Add new logs
+                        data.logs.forEach(log => {
+                            const row = document.createElement('tr');
+                            
+                            const statusClass = log.Status === 'granted' ? 'granted' : 'denied';
+                            const statusText = log.Status === 'granted' ? 'Granted' : 'Denied';
+                            
+                            row.innerHTML = `
+                                <!-- <td>${log.Log_id}</td> -->
+                                <td>${log.User_id || 'N/A'}</td>
+                                <td>${log.Role || 'N/A'}</td>
+                                <td>${log.Room_code}</td>
+                                <td>${log.Access_time}</td>
+                                <td>${log.Access_type}</td>
+                                <td><span class="status ${statusClass}">${statusText}</span></td>
+                            `;
+                            
+                            logsTableBody.appendChild(row);
+                        });
+                        
+                        // Show table
+                        logsContainer.style.display = 'block';
+                        
+                        // Update pagination
+                        updatePagination();
+                        
+                    } else {
+                        // Show no results
+                        noResults.style.display = 'block';
+                        recordCount.textContent = '0 records';
+                    }
+                })
+                .catch(error => {
+                    loadingSpinner.style.display = 'none';
+                    noResults.style.display = 'block';
+                    noResults.innerHTML = `
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <p class="text-danger">Error loading access logs. Please check console and try again.</p>
+                    `;
+                    console.error('Error loading logs (fetch/parsing):', error);
                 });
         }
 
@@ -770,12 +649,11 @@
             tableHeader.innerHTML = `
                 <tr>
                     <!-- <th>Log_id</th> -->
-                    <th>User Name</th>
+                    <th>User_id</th>
                     <th>Role</th>
                     <th>Room</th>
-                    <th>Access_type</th>
                     <th>Access_time</th>
-                    <th>Access</th>
+                    <th>Access_type</th>
                     <th>Status</th>
                 </tr>
             `;
@@ -816,47 +694,53 @@
             const filteredRows = [];
             
             rows.forEach(row => {
-                // Skip hidden or empty rows
                 if (row.style.display === 'none') return;
+                
                 const cells = row.cells;
                 if (!cells || cells.length < 7) return;
-
-                // 1. Capture the Row Data
-                const accessTimeStr = cells[4].textContent; 
-                const rowDate = new Date(accessTimeStr.split(' ')[0]);
-                const rowAccessType = cells[5].textContent.trim().toLowerCase(); 
-                const rowStatus = cells[6].textContent.trim().toLowerCase();
-                const rowRoom = cells[2].textContent.trim(); 
-
-                // 2. Date Filtering Logic (Consolidated)
+                
+                const accessTime = cells[4].textContent;
+                const rowDate = new Date(accessTime.split(' ')[0]);
+                const rowAccessType = cells[5].textContent.toLowerCase();
+                const statusCell = cells[6].querySelector('.status');
+                const rowStatus = statusCell ? statusCell.textContent.toLowerCase().trim() : '';
+                const rowRoom = cells[3].textContent;
+                
+                // Date filter
                 let dateMatch = true;
-                if (dateFrom || dateTo) {
-                    const rowTime = rowDate.getTime();
-                    
-                    if (dateFrom) {
-                        const fromDate = new Date(dateFrom).setHours(0, 0, 0, 0);
-                        if (rowTime < fromDate) dateMatch = false;
-                    }
-                    
-                    if (dateTo) {
-                        const toDate = new Date(dateTo).setHours(23, 59, 59, 999);
-                        if (rowTime > toDate) dateMatch = false;
-                    }
+                if (dateFrom) {
+                    const fromDate = new Date(dateFrom);
+                    if (rowDate < fromDate) dateMatch = false;
                 }
-
-                // 3. Dropdown Filtering Logic
-                const accessTypeMatch = (accessType === 'all' || rowAccessType === accessType.toLowerCase());
-                const statusMatch = (status === 'all' || rowStatus === status.toLowerCase());
+                if (dateTo) {
+                    const toDate = new Date(dateTo);
+                    toDate.setDate(toDate.getDate() + 1); // Include the end date
+                    if (rowDate >= toDate) dateMatch = false;
+                }
+                
+                // Access type filter
+                const accessTypeMatch = (accessType === 'all' || 
+                    rowAccessType === accessType.toLowerCase());
+                
+                // Status filter
+                const statusMatch = (status === 'all' || 
+                    rowStatus === status.toLowerCase());
+                
+                // Room filter
                 const roomMatch = (room === 'all' || rowRoom === room);
-
-                // 4. Final Verification
+                
                 if (dateMatch && accessTypeMatch && statusMatch && roomMatch) {
-                    filteredRows.push(row.cloneNode(true));
+                    // Create a deep clone of the row for printing
+                    const clonedRow = row.cloneNode(true);
+                    filteredRows.push(clonedRow);
                 }
             });
             
             return filteredRows;
         }
+
+        // Auto-refresh every 30 seconds (optional)
+        setInterval(loadLogs, 5000);
 
         // Sidebar toggle (from your script.js)
         const sidebar = document.getElementById('sidebar');
@@ -950,35 +834,28 @@
                 color: white;
             }
             
+            /* Print section styles */
             #printSection {
                 display: none;
+                padding: 20px;
             }
-
+            
             @media print {
-                @page {
-                    margin: 20px; /* This removes the date and title at the top */
-                }
                 body * {
                     visibility: hidden;
-                    height: 0;
-                    margin: 0;
-                    padding: 0;
                 }
-
+                
                 #printSection, #printSection * {
                     visibility: visible;
-                    
-                    height: auto;
                 }
-
+                
                 #printSection {
-                    display: block;
                     position: absolute;
                     left: 0;
                     top: 0;
                     width: 100%;
-                    margin: 0;
-                    padding: 20px;
+                    background: white;
+                    display: block;
                 }
                 
                 .print-header {
@@ -992,27 +869,18 @@
                 }
                 
                 .print-table {
-                    width: 100% !important;
-                    border-collapse: collapse !important;
-                    table-layout: auto !important;
-                    margin-top: 20px;
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
                 }
                 
                 .print-table th,
                 .print-table td {
-                    border: 1px solid #000 !important;
-                    padding: 6px 8px !important;
-                    text-align: left !important;
-                    font-size: 14px !important;
-                    display: table-cell !important;
+                    border: 1px solid #000;
+                    padding: 8px;
+                    text-align: left;
                 }
-                .print-table thead { 
-                    display: table-header-group !important; 
-                }
-                .print-table tr { 
-                    display: table-row !important; 
-                }
-
+                
                 .print-table th {
                     background-color: #f2f2f2;
                     font-weight: bold;
@@ -1027,62 +895,7 @@
             }
         `;
         document.head.appendChild(printCSS);
-
-        function loadAnalytics() {
-            // Change the URL line to this:
-            fetch('ajax/get_access_logs.php?action=analytics')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('todayTaps').textContent = data.today_count;
-                    document.getElementById('energyEvents').textContent = data.energy_events;
-                    document.getElementById('deniedTaps').textContent = data.denied_count;
-                    document.getElementById('peakRoom').textContent = data.peak_room;
-
-                    // FIX: If chart doesn't exist, create it once.
-                    if (!myChart) {
-                        const ctx = document.getElementById('usageChart').getContext('2d');
-                        myChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: data.chart_labels,
-                                datasets: [{
-                                    label: 'Activity (Taps)',
-                                    data: data.chart_data,
-                                    borderColor: '#007bff',
-                                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                                    fill: true,
-                                    tension: 0.4
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                scales: { y: { beginAtZero: true } }
-                            }
-                        });
-                    } else {
-                        // FIX: If chart exists, just update the data and labels
-                        myChart.data.labels = data.chart_labels;
-                        myChart.data.datasets[0].data = data.chart_data;
-                        myChart.update('none'); // 'none' prevents the "glitchy" reset animation
-                    }
-                })
-                .catch(err => console.error("Analytics Error:", err));
-        }
-
-        // 3. Initial execution
-        loadRoomOptions();
-        loadPrintRoomOptions();
-        loadLogs();
-        loadAnalytics();
-
-        // 4. Set the auto-refresh for both table and analytics
-        setInterval(function() {
-            loadLogs();
-            loadAnalytics();
-        }, 5000);
     });
-
     </script>
 </body>
 </html>

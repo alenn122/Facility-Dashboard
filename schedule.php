@@ -124,7 +124,7 @@ header("Pragma: no-cache");
                         <i class="fas fa-search"></i>
                     </span>
                     <input type="text" id="searchInput" class="form-control" 
-                           placeholder="Search by Code, Description, Faculty, Room...">
+                           placeholder="Search by Course, Faculty, Room...">
                 </div>
             </div>
         </div>

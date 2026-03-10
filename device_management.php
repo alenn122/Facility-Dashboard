@@ -268,7 +268,7 @@ if (isset($_GET['edit_id'])) {
                                         <td>
                                             <?php if ($row['device_type'] == 'DOOR'): ?>
                                                 <span class="badge bg-info text-dark device-type-badge">
-                                                    <i class="fas fa-door-closed me-1"></i> Door/RFID
+                                                    <i class="fas fa-door-closed me-1"></i> Door
                                                 </span>
                                             <?php else: ?>
                                                 <span class="badge bg-warning text-dark device-type-badge">

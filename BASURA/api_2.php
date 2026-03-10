@@ -50,7 +50,7 @@ if ($device_query->num_rows == 0) {
 $user_query = $conn->query("SELECT * FROM users WHERE Rfid_tag='$rfid' AND Status='Active'");
 if ($user_query->num_rows == 0) {
     echo "DENIED"; 
-    log_access(null, $rfid, $room_id, null, 'Entry', 'denied', $device_type);
+    log_access(null, $rfid, $room_id, null, 'Entry', 'denied');
     exit();
 }
 $user = $user_query->fetch_assoc();
@@ -101,7 +101,7 @@ else if ($user['Role'] == 'Student') {
 
 // 6. EXECUTE ACCESS & UPDATE ROOM STATUS
 if ($is_authorized) {
-    log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted', $device_type);
+    log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted');
     
     if ($device_type == 'DOOR') {
         // Only open the door, don't touch the room status/power here 
@@ -119,7 +119,7 @@ if ($is_authorized) {
     }
 } else {
     echo "DENIED";
-    log_access($user_id, $rfid, $room_id, null, $access_type, 'denied', $device_type);
+    log_access($user_id, $rfid, $room_id, null, $access_type, 'denied');
 }
 
 // --- FUNCTIONS ---
@@ -128,49 +128,33 @@ function check_schedule($user_id, $room_id, $course_section_id) {
     global $conn;
     $day = date('D'); 
     $time = date('H:i:s');
-
-    // 1. First, check if the user is the FACULTY assigned to this room right now
-    $faculty_sql = "SELECT Schedule_id FROM schedule 
-                    WHERE Room_id = '$room_id' 
-                    AND Faculty_id = '$user_id' 
-                    AND Day = '$day'
-                    AND '$time' BETWEEN Start_time AND End_time LIMIT 1";
-    
-    $faculty_res = $conn->query($faculty_sql);
-    if ($faculty_res && $faculty_res->num_rows > 0) {
-        return $faculty_res->fetch_assoc();
-    }
-
-    // 2. If not faculty, check if it's a STUDENT assigned via CourseSection
-    if (!empty($course_section_id) && $course_section_id !== "NULL") {
-        $student_sql = "SELECT s.Schedule_id FROM schedule s
-                        JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
-                        WHERE s.Room_id = '$room_id' 
-                        AND s.Day = '$day'
-                        AND sa.CourseSection_id = '$course_section_id'
-                        AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
-        $student_res = $conn->query($student_sql);
-        return ($student_res && $student_res->num_rows > 0) ? $student_res->fetch_assoc() : false;
-    }
-
-    return false;
+    $sql = "SELECT s.Schedule_id FROM schedule s
+            JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
+            WHERE s.Room_id = '$room_id' AND s.Day = '$day'
+            AND sa.CourseSection_id = '$course_section_id'
+            AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
+    $res = $conn->query($sql);
+    return ($res && $res->num_rows > 0) ? $res->fetch_assoc() : false;
 }
 
-
-// Update the function definition to include $dt (Device Type)
-function log_access($u, $r, $rm, $s, $t, $st, $dt = null) {
+function log_access($u, $r, $rm, $s, $t, $st) {
     global $conn;
 
+    // 1. SAFE USER ID: If $u is empty/null, use the SQL keyword NULL. Otherwise wrap it in quotes.
     $u_safe = (!empty($u) && $u !== "NULL") ? "'$u'" : "NULL";
+
+    // 2. SAFE SCHEDULE ID: If $s is empty/null, use the SQL keyword NULL.
+    // This is the line that fixes your specific error.
     $s_safe = (!empty($s) && $s !== "NULL") ? "'$s'" : "NULL";
-    // Sanitize the device type
-    $dt_safe = !empty($dt) ? "'$dt'" : "NULL";
 
-    // Update the INSERT statement to include device_type
-    $sql = "INSERT INTO access_log (User_id, Rfid_tag, Room_id, Schedule_id, Access_time, Access_type, device_type, Status) 
-            VALUES ($u_safe, '$r', '$rm', $s_safe, NOW(), '$t', $dt_safe, '$st')";
+    // 3. RUN QUERY
+    // Notice we use $u_safe and $s_safe (which already have quotes or NULL)
+    $sql = "INSERT INTO access_log (User_id, Rfid_tag, Room_id, Schedule_id, Access_time, Access_type, Status) 
+            VALUES ($u_safe, '$r', '$rm', $s_safe, NOW(), '$t', '$st')";
 
+    // Execute
     if (!$conn->query($sql)) {
+        // If it fails, print the error so the ESP32 can see it
         echo "LOGGING ERROR: " . $conn->error;
     }
 }

@@ -365,7 +365,17 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
 
     function toggleCourse() {
         const role = document.getElementById('m_role').value;
-        document.getElementById('m_course_container').style.display = (role === 'Student') ? 'block' : 'none';
+        const container = document.getElementById('m_course_container');
+        const courseSelect = document.getElementById('m_course');
+
+        if (role === 'Student') {
+            container.style.display = 'block';
+            courseSelect.setAttribute('required', 'required');
+        } else {
+            container.style.display = 'none';
+            courseSelect.removeAttribute('required'); // This prevents the focusable error
+            courseSelect.value = ""; // Optional: Clear the value when hidden
+        }
     }
 
     function deleteUser(id, fname, lname) {

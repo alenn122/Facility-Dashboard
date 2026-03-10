@@ -1,183 +1,112 @@
 <?php
 // ajax/get_access_logs.php
+include '../conn.php'; 
 header('Content-Type: application/json');
 
-// Database connection
-$conn = new mysqli('localhost', 'root', '', 'facility-dashboard');
+$action      = $_GET['action'] ?? 'table';
+$status      = $_GET['status'] ?? 'all';
+$room        = $_GET['room'] ?? 'all';
+$access_type = $_GET['access_type'] ?? 'all';
+$search      = isset($_GET['search']) ? trim($_GET['search']) : '';
+$from_date   = $_GET['from_date'] ?? '';
+$to_date     = $_GET['to_date'] ?? '';
 
-// Check connection
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $conn->connect_error]);
+// --- ACTION: ANALYTICS ---
+if ($action === 'analytics') {
+    $response = ['today_count' => 0, 'energy_events' => 0, 'denied_count' => 0, 'peak_room' => 'None', 'chart_labels' => [], 'chart_data' => []];
+    
+    $response['today_count'] = $conn->query("SELECT COUNT(*) as total FROM access_log WHERE DATE(Access_time) = CURDATE()")->fetch_assoc()['total'];
+    $response['denied_count'] = $conn->query("SELECT COUNT(*) as total FROM access_log WHERE Status = 'denied' AND DATE(Access_time) = CURDATE()")->fetch_assoc()['total'];
+    $response['energy_events'] = $conn->query("SELECT COUNT(*) as total FROM access_log WHERE Access_type = 'Exit' AND DATE(Access_time) = CURDATE()")->fetch_assoc()['total'];
+    $res = $conn->query("SELECT r.Room_code, COUNT(*) as count 
+                     FROM access_log al 
+                     JOIN classrooms r ON al.Room_id = r.Room_id 
+                     WHERE DATE(al.Access_time) = CURDATE() 
+                     GROUP BY al.Room_id 
+                     ORDER BY count DESC LIMIT 1");
+
+    if($row = $res->fetch_assoc()) { 
+        $response['peak_room'] = $row['Room_code']; 
+    }
+    // 5. Chart Data (Current Day: 12am to 11pm)
+    $response['chart_labels'] = [];
+    $response['chart_data'] = [];
+
+    for ($hour = 0; $hour <= 23; $hour++) {
+        // Format hour for SQL (00, 01, 02...)
+        $hourFormatted = str_pad($hour, 2, "0", STR_PAD_LEFT);
+        
+        // Format label for the graph (12am, 1am, 2am...)
+        $displayLabel = date("ga", strtotime("$hour:00"));
+        
+        // Count taps for this specific hour of the CURRENT day
+        $res = $conn->query("SELECT COUNT(*) as total 
+                            FROM access_log 
+                            WHERE HOUR(Access_time) = '$hourFormatted' 
+                            AND DATE(Access_time) = CURDATE()");
+        $row = $res->fetch_assoc();
+        
+        $response['chart_labels'][] = $displayLabel;
+        $response['chart_data'][] = (int)$row['total'];
+    }
+
+    echo json_encode($response);
     exit;
 }
 
-// Get filter parameters - Debug output
-error_log("GET parameters: " . print_r($_GET, true));
-
-$status = isset($_GET['status']) ? $_GET['status'] : 'all';
-$room = isset($_GET['room']) ? $_GET['room'] : 'all';
-$access_type = isset($_GET['access_type']) ? $_GET['access_type'] : 'all';
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
-$offset = ($page - 1) * $limit;
-
-// Debug
-error_log("Status: $status, Room: $room, Access Type: $access_type, Search: $search");
-
-// Build base query
-$sql = "SELECT 
-            al.Log_id,
-            al.User_id,
-            al.Rfid_tag,
-            u.Role,
-            r.Room_code AS Room_code,
-            d.device_type,
-            al.Access_time,
-            al.Access_type,
-            al.Status
-        FROM access_log al
-        LEFT JOIN users u ON al.User_id = u.User_id
-        LEFT JOIN classrooms r ON al.Room_id = r.Room_id
-        LEFT JOIN devices d ON r.Room_id = d.room_id
-        WHERE 1=1";
-
-$sql_count = "SELECT COUNT(*) as total FROM access_log al
+// --- ACTION: TABLE & PRINT ---
+// Base Query matches your JavaScript requirements
+$base_sql = " FROM access_log al
               LEFT JOIN users u ON al.User_id = u.User_id
               LEFT JOIN classrooms r ON al.Room_id = r.Room_id
-              LEFT JOIN devices d ON r.Room_id = d.room_id
               WHERE 1=1";
 
-$conditions = [];
+$conditions = "";
 $params = [];
-$types = '';
+$types = "";
 
-// Apply filters - FIXED CONDITIONS
-if ($status != 'all') {
-    $conditions[] = "al.Status = ?";
-    $params[] = $status;
-    $types .= 's';
-    error_log("Added status filter: $status");
-}
-
-if ($room != 'all') {
-    $conditions[] = "r.Room_code = ?";
-    $params[] = $room;
-    $types .= 's';
-    error_log("Added room filter: $room");
-}
-
-if ($access_type != 'all') {
-    $conditions[] = "al.Access_type = ?";
-    $params[] = $access_type;
-    $types .= 's';
-    error_log("Added access type filter: $access_type");
-}
+if ($status != 'all') { $conditions .= " AND al.Status = ?"; $params[] = $status; $types .= 's'; }
+if ($room != 'all') { $conditions .= " AND r.Room_code = ?"; $params[] = $room; $types .= 's'; }
+if ($access_type != 'all') { $conditions .= " AND al.Access_type = ?"; $params[] = $access_type; $types .= 's'; }
+if (!empty($from_date) && !empty($to_date)) { $conditions .= " AND DATE(al.Access_time) BETWEEN ? AND ?"; $params[] = $from_date; $params[] = $to_date; $types .= "ss"; }
 
 if (!empty($search)) {
-    // Check if search is numeric for Log_id or User_id
-    if (is_numeric($search)) {
-        $conditions[] = "(al.Log_id = ? OR 
-                         al.User_id = ? OR 
-                         al.Rfid_tag LIKE ? OR 
-                         r.Room_code LIKE ? OR
-                         u.F_name LIKE ? OR
-                         u.L_name LIKE ?)";
-        $search_term = "%$search%";
-        array_push($params, intval($search), intval($search), $search_term, $search_term, $search_term, $search_term);
-        $types .= 'iissss';
-    } else {
-        $conditions[] = "(al.Rfid_tag LIKE ? OR 
-                         r.Room_code LIKE ? OR
-                         u.F_name LIKE ? OR
-                         u.L_name LIKE ?)";
-        $search_term = "%$search%";
-        array_push($params, $search_term, $search_term, $search_term, $search_term);
-        $types .= 'ssss';
-    }
-    error_log("Added search filter: $search (numeric: " . (is_numeric($search) ? 'true' : 'false') . ")");
+    $conditions .= " AND (al.Rfid_tag LIKE ? OR r.Room_code LIKE ? OR u.F_name LIKE ? OR u.L_name LIKE ?)";
+    $st = "%$search%";
+    array_push($params, $st, $st, $st, $st);
+    $types .= 'ssss';
 }
 
-// Add conditions to queries
-if (!empty($conditions)) {
-    $condition_string = " AND " . implode(" AND ", $conditions);
-    $sql .= $condition_string;
-    $sql_count .= $condition_string;
-}
+$total = 0;
+if ($action === 'table') {
+    // Count total for pagination
+    $stmt_c = $conn->prepare("SELECT COUNT(*) as total" . $base_sql . $conditions);
+    if (!empty($params)) $stmt_c->bind_param($types, ...$params);
+    $stmt_c->execute();
+    $total = $stmt_c->get_result()->fetch_assoc()['total'];
 
-// Debug SQL
-error_log("SQL: $sql");
-error_log("Count SQL: $sql_count");
-error_log("Params: " . print_r($params, true));
-error_log("Types: $types");
-
-// Count total records
-$count_params = $params;
-$count_types = $types;
-
-if (!empty($conditions)) {
-    $stmt_count = $conn->prepare($sql_count);
-    if ($count_params) {
-        $stmt_count->bind_param($count_types, ...$count_params);
-    }
-    $stmt_count->execute();
-    $count_result = $stmt_count->get_result();
-    $total_row = $count_result->fetch_assoc();
-    $total = $total_row['total'];
-    $stmt_count->close();
-    error_log("Total count: $total");
+    $limit = intval($_GET['limit'] ?? 50);
+    $offset = (intval($_GET['page'] ?? 1) - 1) * $limit;
+    $order_limit = " ORDER BY al.Access_time DESC LIMIT ? OFFSET ?";
+    $final_params = array_merge($params, [$limit, $offset]);
+    $final_types = $types . "ii";
 } else {
-    $result_count = $conn->query($sql_count);
-    $total_row = $result_count->fetch_assoc();
-    $total = $total_row['total'];
-    error_log("Total count (no params): $total");
+    $order_limit = " ORDER BY al.Access_time DESC";
+    $final_params = $params;
+    $final_types = $types;
 }
 
-// Add ordering and pagination to main query only
-$sql_paginated = $sql . " ORDER BY al.Access_time DESC LIMIT ? OFFSET ?";
+// Select query including your device_type logic
+$select = "SELECT al.*, u.F_name, u.L_name, u.Role, r.Room_code,
+           CASE 
+               WHEN al.Access_type IN ('Entry', 'Exit') AND u.Role = 'Student' THEN 'DOOR'
+               WHEN al.Status = 'granted' AND u.Role IN ('Faculty', 'Admin') THEN 'DOOR & POWER'
+               ELSE 'DOOR'
+           END AS device_type ";
 
-// Prepare params for paginated query
-$paginated_params = $params;
-$paginated_params[] = $limit;
-$paginated_params[] = $offset;
-$paginated_types = $types . 'ii';
-
-// Debug final SQL
-error_log("Final SQL with pagination: $sql_paginated");
-error_log("Final params: " . print_r($paginated_params, true));
-error_log("Final types: $paginated_types");
-
-// Prepare and execute main query
-$stmt = $conn->prepare($sql_paginated);
-if ($paginated_params) {
-    $stmt->bind_param($paginated_types, ...$paginated_params);
-}
+$stmt = $conn->prepare($select . $base_sql . $conditions . $order_limit);
+if (!empty($final_params)) $stmt->bind_param($final_types, ...$final_params);
 $stmt->execute();
-$result = $stmt->get_result();
+$logs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$logs = [];
-while ($row = $result->fetch_assoc()) {
-    $logs[] = $row;
-}
-
-$stmt->close();
-$conn->close();
-
-// Debug response
-error_log("Returning " . count($logs) . " logs");
-
-// Return JSON response
-echo json_encode([
-    'success' => true,
-    'logs' => $logs,
-    'total' => $total,
-    'page' => $page,
-    'limit' => $limit,
-    'filters' => [
-        'status' => $status,
-        'room' => $room,
-        'access_type' => $access_type,
-        'search' => $search
-    ]
-]);
-?>
+echo json_encode(['success' => true, 'logs' => $logs, 'total' => $total]);

@@ -22,3 +22,12 @@ Stack trace:
 [09-Mar-2026 16:09:52 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
 [09-Mar-2026 16:09:55 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Friday', Start: '9:00', End: '21:00', Room: 'ROOM101', Faculty: 'boss erwin'
 [09-Mar-2026 16:10:22 Europe/Berlin] Row 2 - Code: 'OAC309', Desc: 'Customer Relations', Section: 'BSIT 1-11', Day: 'Tuesday', Start: '9:00', End: '21:00', Room: '101', Faculty: 'Anna Cruz'
+[11-Mar-2026 04:27:41 Europe/Berlin] PHP Fatal error:  Uncaught Error: Class "ZipArchive" not found in C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\Shared\File.php:63
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\Shared\File.php(188): PhpOffice\PhpSpreadsheet\Shared\File::fileExists('zip://C:\\xampp\\...')
+#1 C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\Reader\Xlsx.php(97): PhpOffice\PhpSpreadsheet\Shared\File::testFileNoThrow('C:\\xampp\\tmp\\ph...', '_rels/.rels')
+#2 C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\IOFactory.php(166): PhpOffice\PhpSpreadsheet\Reader\Xlsx->canRead('C:\\xampp\\tmp\\ph...')
+#3 C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\IOFactory.php(106): PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile('C:\\xampp\\tmp\\ph...', NULL)
+#4 C:\xampp\htdocs\Facility-Dashboard\ajax\import_schedule.php(53): PhpOffice\PhpSpreadsheet\IOFactory::load('C:\\xampp\\tmp\\ph...')
+#5 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\Shared\File.php on line 63

@@ -1,10 +1,12 @@
 <?php
-session_start();
 include 'conn.php';
+include "session_auth.php";
 
-// Security & Cache Headers
+// Prevent browser caching
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
+header("Expires: 0");
 
 // --- BACKEND LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -89,30 +91,8 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
 </head>
 <body>
 
-    <button class="btn btn-primary d-md-none m-2" id="openSidebar"><i class="fas fa-bars"></i></button>
-
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-close d-md-none">
-            <button class="btn btn-light btn-sm" id="closeSidebar"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="sidebar-header text-center">
-            <img src="img/loalogo.png" alt="Logo" class="sidebar-logo">
-            <h6 class="mt-2 mb-4 text-white">Lyceum of San Pedro</h6>
-        </div>
-        <ul class="nav flex-column sidebar-menu">
-            <li class="nav-item"><a class="nav-link" href="index.php"><i class="fas fa-house"></i> Home</a></li>
-            <li class="nav-item"><a class="nav-link active" href="users.php"><i class="fas fa-users"></i> Users</a></li>
-            <li class="nav-item"><a class="nav-link" href="rooms.php"><i class="fas fa-door-open"></i> Rooms</a></li>
-            <li class="nav-item"><a class="nav-link" href="schedule.php"><i class="fas fa-calendar"></i> Schedule</a></li>
-            <li class="nav-item"><a class="nav-link" href="device_management.php"><i class="fa-solid fa-desktop"></i> Device Management</a></li>
-            <li class="nav-item"><a class="nav-link" href="access_logs.php"><i class="fas fa-list"></i> Access Logs</a></li>
-        </ul>
-        <div class="sidebar-footer">
-            <small class="text-white">Jonathan M.</small><br>
-            <span class="text-light">Faculty Member</span>
-            <a href="logout.php" class="logout"><i class="fas fa-sign-out-alt"></i> Log out</a>
-        </div>
-    </div>
+        <!-- NAVIGATION SIDEBAR -->
+    <?php include 'sidebar.php'; ?>
 
     <div class="main-content p-4">
         <div class="card shadow-sm mb-4">

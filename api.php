@@ -37,11 +37,13 @@ $rfid = isset($_POST['rfid']) ? $_POST['rfid'] : '';
 // 2. DEVICE & ROOM LOOKUP
 $device_sql = "SELECT d.room_id, d.device_type FROM devices d WHERE d.mac_address = '$mac' LIMIT 1";
 $device_query = $conn->query($device_sql);
-$device = $device_query->fetch_assoc();
-$room_id = $device['room_id'];
-$device_type = $device['device_type']; // 'DOOR' or 'POWER'
 
-if ($device_query->num_rows == 0) {
+// Fix: Check if a device exists BEFORE trying to fetch the array
+if ($device_query && $device_query->num_rows > 0) {
+    $device = $device_query->fetch_assoc();
+    $room_id = $device['room_id'];
+    $device_type = strtoupper($device['device_type']);
+} else {
     echo "UNKNOWN DEVICE"; 
     exit();
 }

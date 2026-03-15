@@ -20,6 +20,10 @@ header("Expires: 0");
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
     <!-- SWEETALERT2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <!-- SELECT2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- CSS -->
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/bootstrap.min.css">
@@ -174,7 +178,7 @@ header("Expires: 0");
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="subject" class="form-label">Subject *</label>
-                                <select class="form-select" id="subject" name="subject" required>
+                                <select class="form-select select2-enable" id="subject" name="subject" required>
                                     <option value="">Select Subject</option>
                                     <?php
                                     $subjects_sql = "SELECT * FROM subject ORDER BY Code";
@@ -245,7 +249,7 @@ header("Expires: 0");
                             
                             <div class="col-12">
                                 <label for="courseSections" class="form-label">Course Sections *</label>
-                                <select class="form-select" id="courseSections" name="course_sections[]" multiple required style="height: 150px;">
+                                <select class="form-select select2-enable" id="courseSections" name="course_sections[]" multiple required style="height: 150px;">
                                     <?php
                                     $courses_sql = "SELECT * FROM course_section ORDER BY CourseSection";
                                     $courses_result = $conn->query($courses_sql);
@@ -388,6 +392,18 @@ header("Expires: 0");
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
     <script src="js/schedule.js?v=2.0"></script>
+    <script>
+        $(document).ready(function() {
+            // This targets the Subject and Course Sections IDs
+            $('#subject, #courseSections').select2({
+                tags: true,
+                placeholder: "Select or type to add...",
+                width: '100%',
+                dropdownParent: $('#scheduleModal'),
+                containerCssClass: "custom-select2-container"
+            });
+        });
+    </script>
     
 </body>
 </html>

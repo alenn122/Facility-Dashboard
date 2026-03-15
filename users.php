@@ -10,6 +10,7 @@ header("Expires: 0");
 
 // --- BACKEND LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     // SAVE / UPDATE USER
     if (isset($_POST['save_user'])) {
         $id = $_POST['user_id'];
@@ -27,11 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $res = mysqli_query($conn, $sql);
-        if ($res) {
-            $_SESSION['success_message'] = !empty($id) ? 'User updated successfully!' : 'User added successfully!';
-        } else {
-            $_SESSION['error_message'] = 'Database error: ' . mysqli_error($conn);
+
+        // CHECK IF AJAX REQUEST
+        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            if ($res) {
+                echo json_encode(['status' => 'success', 'message' => !empty($id) ? 'User updated successfully!' : 'User added successfully!']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
+            }
+            exit; // Stop further execution for AJAX
         }
+
+        // Fallback for standard form submission
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
@@ -246,9 +254,19 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                 <div class="modal-body">
                     <input type="hidden" name="user_id" id="m_id">
                     <div class="mb-3">
-                        <label class="form-label small">RFID Tag</label>
-                        <input type="text" name="rfid_tag" id="m_rfid" class="form-control" required>
-                    </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label small">RFID Tag</label>
+                            <span id="scannerStatus" class="badge bg-secondary mb-1" style="font-size: 0.7rem;">
+                                <i class="fas fa-plug me-1"></i>Scanner Offline
+                            </span>
+                        </div>
+                        <div class="position-relative">
+                            <input type="text" name="rfid_tag" id="m_rfid" class="form-control" placeholder="Scanning..." required>
+                            <div id="rfidHelp" class="form-text text-primary mt-1">
+                                <i class="fas fa-rss me-1"></i> <strong>Scan RFID card
+                            </div>
+                        </div>
+                    </div>             
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small">First Name</label>
@@ -287,7 +305,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="save_user" class="main-btn">Save Changes</button>
+                    <button type="button" id="saveUserBtn" class="main-btn">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -388,6 +406,102 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
     <?php if (isset($_SESSION['error_message'])): ?>
     <script>Swal.fire({ icon: 'warning', title: 'Warning', text: <?= json_encode($_SESSION['error_message']) ?>, showConfirmButton: true });</script>
     <?php unset($_SESSION['error_message']); endif; ?>
+    <script>
+        setInterval(function() {
+            const modal = document.getElementById('addEditModal');
+            const rfidField = document.getElementById('m_rfid');
+            const statusBadge = document.getElementById('scannerStatus');
 
+            if (modal && modal.classList.contains('show')) {
+                // Use a special flag to check connection without consuming a scan
+                fetch('rfid.php?get_last_scan=1')
+                .then(response => {
+                    if (!response.ok) throw new Error();
+                    
+                    // Connection is OK - Update Status
+                    statusBadge.classList.replace('bg-secondary', 'bg-success');
+                    statusBadge.classList.replace('bg-danger', 'bg-success');
+                    statusBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Scanner Online';
+
+                    return response.text();
+                })
+                .then(data => {
+                    const cleanData = data.trim();
+                    
+                    if (cleanData !== "" && !cleanData.includes("<html") && cleanData !== rfidField.value) {
+                        rfidField.value = cleanData;
+                        
+                        // Visual feedback for successful scan
+                        rfidField.style.backgroundColor = "#d4edda";
+                        rfidField.style.transition = "background-color 0.5s";
+                        setTimeout(() => { rfidField.style.backgroundColor = ""; }, 500);
+                    }
+                })
+                .catch(err => {
+                    // Connection Failed - Update Status
+                    statusBadge.classList.replace('bg-success', 'bg-danger');
+                    statusBadge.classList.replace('bg-secondary', 'bg-danger');
+                    statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Scanner Offline';
+                });
+            }
+        }, 1000);
+
+        // Add this inside your script tag
+        document.getElementById('m_rfid').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // This stops the page from refreshing
+                console.log("Enter key blocked to prevent refresh");
+                return false;
+            }
+        });
+        document.getElementById('saveUserBtn').addEventListener('click', function() {
+            const form = document.querySelector('#addEditModal form');
+            
+            // Check if form is valid (required fields)
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+            formData.append('save_user', '1');
+
+            // Show loading state on button
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    bootstrap.Modal.getInstance(document.getElementById('addEditModal')).hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload(); // Reload to refresh the table with new data
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        });
+    </script>
 </body>
 </html>

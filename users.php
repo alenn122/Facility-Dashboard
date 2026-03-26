@@ -1,8 +1,18 @@
 <?php
+// 1. Session and Auth must come first before ANY output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include 'conn.php';
 include "session_auth.php";
 
-// Prevent browser caching
+// 2. CSRF Token Generation
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// 3. Prevent browser caching
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
@@ -10,40 +20,83 @@ header("Expires: 0");
 
 // --- BACKEND LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die(json_encode(['status' => 'error', 'message' => 'CSRF token validation failed']));
+    }
 
-    // SAVE / UPDATE USER
     if (isset($_POST['save_user'])) {
-        $id = $_POST['user_id'];
-        $rfid = mysqli_real_escape_string($conn, $_POST['rfid_tag']);
-        $fname = mysqli_real_escape_string($conn, $_POST['f_name']);
-        $lname = mysqli_real_escape_string($conn, $_POST['l_name']);
+        $id = !empty($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+        $rfid = $_POST['rfid_tag'];
+        $fname = $_POST['f_name'];
+        $lname = $_POST['l_name'];
         $role = $_POST['role'];
         $status = $_POST['status'];
-        $courseId = !empty($_POST['course_id']) ? $_POST['course_id'] : "NULL";
-
-        if (!empty($id)) {
-            $sql = "UPDATE users SET Rfid_tag='$rfid', F_name='$fname', L_name='$lname', Role='$role', Status='$status', courseSection_id=$courseId WHERE User_id=$id";
-        } else {
-            $sql = "INSERT INTO users (Rfid_tag, F_name, L_name, Role, Status, courseSection_id) VALUES ('$rfid', '$fname', '$lname', '$role', '$status', $courseId)";
+        $isIrregular = isset($_POST['is_irregular']) ? 1 : 0;
+        $courseId = !empty($_POST['course_id']) ? intval($_POST['course_id']) : null;
+        
+        // Input validation
+        $errors = [];
+        if (empty($rfid)) $errors[] = "RFID tag is required";
+        if (empty($fname)) $errors[] = "First name is required";
+        if (empty($lname)) $errors[] = "Last name is required";
+        if (!in_array($role, ['Student', 'Faculty', 'Admin'])) $errors[] = "Invalid role";
+        
+        if (!empty($errors)) {
+            $error_msg = implode(", ", $errors);
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                echo json_encode(['status' => 'error', 'message' => $error_msg]);
+                exit;
+            }
+            $_SESSION['error_message'] = $error_msg;
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
         }
         
-        $res = mysqli_query($conn, $sql);
-
-        // CHECK IF AJAX REQUEST
-        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            if ($res) {
-                echo json_encode(['status' => 'success', 'message' => !empty($id) ? 'User updated successfully!' : 'User added successfully!']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
-            }
-            exit; // Stop further execution for AJAX
+        if ($id > 0) {
+            $sql = "UPDATE users SET Rfid_tag=?, F_name=?, L_name=?, Role=?, Status=?, courseSection_id=? WHERE User_id=?";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "sssssii", $rfid, $fname, $lname, $role, $status, $courseId, $id);
+        } else {
+            $sql = "INSERT INTO users (Rfid_tag, F_name, L_name, Role, Status, courseSection_id) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "sssssi", $rfid, $fname, $lname, $role, $status, $courseId);
         }
-
-        // Fallback for standard form submission
+        
+        $res = mysqli_stmt_execute($stmt);
+        
+        if ($res) {
+            $current_user_id = ($id > 0) ? $id : mysqli_insert_id($conn);
+            
+            $deleteStmt = mysqli_prepare($conn, "DELETE FROM individual_permissions WHERE User_id = ?");
+            mysqli_stmt_bind_param($deleteStmt, "i", $current_user_id);
+            mysqli_stmt_execute($deleteStmt);
+            
+            if ($isIrregular && isset($_POST['special_schedule_ids']) && is_array($_POST['special_schedule_ids'])) {
+                $insertStmt = mysqli_prepare($conn, "INSERT INTO individual_permissions (User_id, Schedule_id, Reason) VALUES (?, ?, ?)");
+                $reason = 'Irregular/Working Student';
+                foreach ($_POST['special_schedule_ids'] as $sched_id) {
+                    $sched_id = intval($sched_id);
+                    mysqli_stmt_bind_param($insertStmt, "iis", $current_user_id, $sched_id, $reason);
+                    mysqli_stmt_execute($insertStmt);
+                }
+                mysqli_stmt_close($insertStmt);
+            }
+            mysqli_stmt_close($deleteStmt);
+        }
+        mysqli_stmt_close($stmt);
+        
+        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo json_encode(['status' => $res ? 'success' : 'error', 'message' => $res ? 'User saved!' : mysqli_error($conn)]);
+            exit;
+        }
+        
+        $_SESSION[$res ? 'success_message' : 'error_message'] = $res ? ($id > 0 ? 'User updated!' : 'User added!') : 'Database error: ' . mysqli_error($conn);
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
-
+    
     // SECURE DELETE LOGIC
     if (isset($_POST['delete_user'])) {
         $id = intval($_POST['user_id']);
@@ -80,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Stats Queries
-$student_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS count FROM users WHERE Role='Student' AND Status='Active'"))['count'];
-$faculty_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS count FROM users WHERE Role IN ('Faculty','Admin') AND Status='Active'"))['count'];
-$inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS count FROM users WHERE Status='Inactive'"))['count'];
+$student_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Student' AND Status='Active'"))['c'];
+$faculty_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role IN ('Faculty','Admin') AND Status='Active'"))['c'];
+$inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Status='Inactive'"))['c'];
 ?>
 
 <!DOCTYPE html>
@@ -94,12 +147,13 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>USERS - Smart Classroom</title>
 </head>
 <body>
 
-        <!-- NAVIGATION SIDEBAR -->
     <?php include 'sidebar.php'; ?>
 
     <div class="main-content p-4">
@@ -142,104 +196,79 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
 
         <div class="card border-0 shadow-sm p-4">
             <ul class="nav nav-pills mb-4" id="userTabs" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active custom-pill" data-bs-toggle="pill" data-bs-target="#studentsTab" type="button">
-                        <i class="fas fa-user-graduate me-2"></i>Students <span class="badge ms-1 bg-danger"><?php echo $student_count; ?></span>
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#facultyTab" type="button">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>Faculty <span class="badge ms-1 bg-danger"><?php echo $faculty_count; ?></span>
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#allTab" type="button">
-                        <i class="fas fa-users me-2"></i>All Users <span class="badge ms-1 bg-danger"><?php echo $student_count + $faculty_count + $inactive_count; ?></span>
-                    </button>
-                </li>
+                <li class="nav-item"><button class="nav-link active custom-pill" data-bs-toggle="pill" data-bs-target="#studentsTab" type="button">Students <span class="badge ms-1 bg-danger"><?php echo $student_count; ?></span></button></li>
+                <li class="nav-item"><button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#facultyTab" type="button">Faculty <span class="badge ms-1 bg-danger"><?php echo $faculty_count; ?></span></button></li>
+                <li class="nav-item"><button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#allTab" type="button">All Users</button></li>
             </ul>
 
             <div class="d-flex flex-wrap gap-2 mb-4">
                 <select class="form-select w-auto filter-trigger" id="courseFilter">
                     <option value="">All Courses</option>
-                    <?php
-                    $courseResult = mysqli_query($conn, "SELECT CourseSection FROM course_section ORDER BY CourseSection");
-                    while ($course = mysqli_fetch_assoc($courseResult)) {
-                        echo '<option value="' . $course['CourseSection'] . '">' . $course['CourseSection'] . '</option>';
+                    <?php 
+                    $cRes = mysqli_query($conn, "SELECT CourseSection FROM course_section ORDER BY CourseSection");
+                    while($c = mysqli_fetch_assoc($cRes)) {
+                        echo "<option value='" . htmlspecialchars($c['CourseSection']) . "'>" . htmlspecialchars($c['CourseSection']) . "</option>";
                     }
                     ?>
                 </select>
-
                 <select class="form-select w-auto filter-trigger" id="statusFilter">
                     <option value="">All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
-
                 <button class="btn btn-secondary ms-md-auto" onclick="resetFilters()"><i class="fas fa-times me-2"></i>Clear Filters</button>
-                <button class="main-btn" data-bs-toggle="modal" data-bs-target="#addEditModal" onclick="openAdd()"><i class="fas fa-user-plus me-2"></i>Add User</button>
+                <button class="main-btn" onclick="openAdd()"><i class="fas fa-user-plus me-2"></i>Add User</button>
             </div>
 
             <div class="tab-content">
                 <?php
-                $tabs = [
-                    'studentsTab' => "WHERE users.Role = 'Student'",
-                    'facultyTab'  => "WHERE users.Role IN ('Faculty','Admin')",
-                    'allTab'      => ""
-                ];
+                $tabs = ['studentsTab' => "WHERE u.Role = 'Student'", 'facultyTab' => "WHERE u.Role IN ('Faculty','Admin')", 'allTab' => ""];
                 $first = true;
-
-                foreach ($tabs as $tabId => $condition):
-                    $query = "SELECT users.*, course_section.CourseSection FROM users 
-                              LEFT JOIN course_section ON users.courseSection_id = course_section.CourseSection_id 
-                              $condition ORDER BY users.User_id DESC";
-                    $result = mysqli_query($conn, $query);
-                    $isFacultyTab = ($tabId === 'facultyTab');
+                foreach ($tabs as $tabId => $cond):
+                    $sql = "SELECT u.*, cs.CourseSection,u.courseSection_id as cs_id, GROUP_CONCAT(ip.Schedule_id) as all_special_ids 
+                            FROM users u 
+                            LEFT JOIN course_section cs ON u.courseSection_id = cs.CourseSection_id 
+                            LEFT JOIN individual_permissions ip ON u.User_id = ip.User_id
+                            $cond GROUP BY u.User_id ORDER BY u.User_id DESC";
+                    $result = mysqli_query($conn, $sql);
                 ?>
-                    <div class="tab-pane fade <?php echo $first ? 'show active' : ''; ?>" id="<?php echo $tabId; ?>">
-                        <div class="table-responsive" style="max-height:500px;overflow-y:auto;">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>ID</th><th>RFID</th><th>First</th><th>Last</th>
-                                        <?php if (!$isFacultyTab): ?><th>Course</th><?php endif; ?>
-                                        <th>Status</th><th class="text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (mysqli_num_rows($result) > 0): ?>
-                                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                                            <tr class="user-row" data-course="<?= $row['CourseSection'] ?>" data-status="<?= $row['Status'] ?>">
-                                                <td><?= $row['User_id'] ?></td>
-                                                <td><?= htmlspecialchars($row['Rfid_tag']) ?></td>
-                                                <td><?= htmlspecialchars($row['F_name']) ?></td>
-                                                <td><?= htmlspecialchars($row['L_name']) ?></td>
-                                                <?php if (!$isFacultyTab): ?>
-                                                    <td><?= htmlspecialchars($row['CourseSection'] ?? 'N/A') ?></td>
-                                                <?php endif; ?>
-                                                <td>
-                                                    <span class="badge <?= $row['Status'] === 'Active' ? 'bg-success' : 'bg-secondary' ?>">
-                                                        <?= $row['Status'] ?>
-                                                    </span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <button class="btn btn-success btn-sm" onclick='openEdit(<?= json_encode($row) ?>)'>
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(<?= $row['User_id'] ?>, '<?= $row['F_name'] ?>', '<?= $row['L_name'] ?>')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        <?php endwhile; ?>
-                                    <?php else: ?>
-                                        <tr><td colspan="<?= $isFacultyTab ? '6' : '7' ?>" class="text-center">No records</td></tr>
+                <div class="tab-pane fade <?php echo $first ? 'show active' : ''; ?>" id="<?php echo $tabId; ?>">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th><th>RFID</th><th>First</th><th>Last</th>
+                                    <?php if($tabId !== 'facultyTab'): ?><th>Course</th><?php endif; ?>
+                                    <th>Status</th><th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while($row = mysqli_fetch_assoc($result)): 
+                                    $isIrreg = !empty($row['all_special_ids']); 
+                                ?>
+                                <tr class="user-row <?php echo $isIrreg ? 'irregular-indicator':''; ?>" data-course="<?php echo htmlspecialchars($row['CourseSection'] ?? ''); ?>" data-status="<?php echo htmlspecialchars($row['Status']); ?>">
+                                    <td><?php echo htmlspecialchars($row['User_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['Rfid_tag']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['F_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['L_name']); ?></td>
+                                    <?php if($tabId !== 'facultyTab'): ?>
+                                    <td>
+                                        <?php echo htmlspecialchars($row['CourseSection'] ?? 'N/A'); ?>
+                                        <?php if($isIrreg): ?><span class="badge bg-warning text-dark ms-1">Irregular/Working</span><?php endif; ?>
+                                    </td>
                                     <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                    <td><span class="badge <?php echo $row['Status']=='Active'?'bg-success':'bg-secondary'; ?>"><?php echo htmlspecialchars($row['Status']); ?></span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-success btn-sm me-1" onclick='openEdit(<?php echo json_encode($row); ?>)'><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteUser(<?php echo $row['User_id']; ?>, '<?php echo addslashes($row['F_name']); ?>', '<?php echo addslashes($row['L_name']); ?>')"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
                     </div>
-                <?php $first = false; endforeach; ?>
+                </div>
+                <?php $first=false; endforeach; ?>
             </div>
         </div>
     </div>
@@ -253,55 +282,56 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="user_id" id="m_id">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <label class="form-label small">RFID Tag</label>
-                            <span id="scannerStatus" class="badge bg-secondary mb-1" style="font-size: 0.7rem;">
-                                <i class="fas fa-plug me-1"></i>Scanner Offline
-                            </span>
+                            <span id="scannerStatus" class="badge bg-secondary mb-1" style="font-size: 0.7rem;"><i class="fas fa-plug me-1"></i>Scanner Offline</span>
                         </div>
-                        <div class="position-relative">
-                            <input type="text" name="rfid_tag" id="m_rfid" class="form-control" placeholder="Scanning..." required>
-                            <div id="rfidHelp" class="form-text text-primary mt-1">
-                                <i class="fas fa-rss me-1"></i> <strong>Scan RFID card
-                            </div>
-                        </div>
-                    </div>             
+                        <input type="text" name="rfid_tag" id="m_rfid" class="form-control" required placeholder="Scan RFID card...">
+                    </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small">First Name</label>
-                            <input type="text" name="f_name" id="m_fname" class="form-control" required>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small">Last Name</label>
-                            <input type="text" name="l_name" id="m_lname" class="form-control" required>
-                        </div>
+                        <div class="col-6"><label class="form-label small">First Name</label><input type="text" name="f_name" id="m_fname" class="form-control" required></div>
+                        <div class="col-6"><label class="form-label small">Last Name</label><input type="text" name="l_name" id="m_lname" class="form-control" required></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small">Role</label>
-                        <select name="role" id="m_role" class="form-select" onchange="toggleCourse()">
-                            <option value="Student">Student</option>
-                            <option value="Faculty">Faculty</option>
-                            <option value="Admin">Admin</option>
+                        <select name="role" id="m_role" class="form-select" onchange="toggleRole()">
+                            <option value="Student">Student</option><option value="Faculty">Faculty</option><option value="Admin">Admin</option>
                         </select>
                     </div>
                     <div class="mb-3" id="m_course_container">
                         <label class="form-label small">Course Section</label>
                         <select name="course_id" id="m_course" class="form-select">
-                             <option value="">None</option>
-                            <?php
-                            $cRes = mysqli_query($conn, "SELECT * FROM course_section");
-                            while($c = mysqli_fetch_assoc($cRes)) echo "<option value='{$c['CourseSection_id']}'>{$c['CourseSection']}</option>";
+                            <option value="">None</option>
+                            <?php 
+                            $cRes = mysqli_query($conn, "SELECT * FROM course_section ORDER BY CourseSection");
+                            while($c = mysqli_fetch_assoc($cRes)) {
+                                echo "<option value='" . $c['CourseSection_id'] . "'>" . htmlspecialchars($c['CourseSection']) . "</option>";
+                            }
                             ?>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Status</label>
-                        <select name="status" id="m_status" class="form-select">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
+                    <div class="mb-3" id="irregular_checkbox_container">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_irregular_checkbox" name="is_irregular">
+                            <label class="form-check-label checkbox-label" for="is_irregular_checkbox">Irregular / Working Student</label>
+                        </div>
                     </div>
+                    <div id="special_schedule_container" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-warning">Special Schedule Overrides</label>
+                            <select class="form-select select2-enable" id="m_special_sched" name="special_schedule_ids[]" multiple style="width: 100%;">
+                                <?php
+                                $sRes = mysqli_query($conn, "SELECT s.Schedule_id, s.Day, sub.Code FROM schedule s JOIN subject sub ON s.Subject_id = sub.Subject_id ORDER BY sub.Code");
+                                while($s = mysqli_fetch_assoc($sRes)) {
+                                    echo "<option value='" . $s['Schedule_id'] . "'>" . htmlspecialchars($s['Code'] . " (" . $s['Day'] . ")") . "</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3"><label class="form-label small">Status</label><select name="status" id="m_status" class="form-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
@@ -311,98 +341,120 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cou
         </div>
     </div>
 
-    <script>
-    // Filtering Logic
-    function applyAllFilters() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const course = document.getElementById('courseFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        const activePane = document.querySelector('.tab-pane.active');
-
-        activePane.querySelectorAll('.user-row').forEach(row => {
-            const text = row.textContent.toLowerCase();
-            const rowCourse = row.getAttribute('data-course');
-            const rowStatus = row.getAttribute('data-status');
-            const matchSearch = text.includes(search);
-            const matchCourse = course === "" || rowCourse === course;
-            const matchStatus = status === "" || rowStatus === status;
-            row.style.display = (matchSearch && matchCourse && matchStatus) ? "" : "none";
-        });
-    }
-
-    document.querySelectorAll('.filter-trigger, #searchInput').forEach(el => el.addEventListener('input', applyAllFilters));
-    document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => tab.addEventListener('shown.bs.tab', applyAllFilters));
-
-    function resetFilters() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('courseFilter').value = '';
-        document.getElementById('statusFilter').value = '';
-        applyAllFilters();
-    }
-
-    // Modal Control Logic
-    function openAdd() {
-        document.getElementById('modalTitle').innerText = "Add New User";
-        document.getElementById('m_id').value = "";
-        document.querySelector('#addEditModal form').reset();
-        toggleCourse();
-    }
-
-    function openEdit(data) {
-        document.getElementById('modalTitle').innerText = "Edit User";
-        document.getElementById('m_id').value = data.User_id;
-        document.getElementById('m_rfid').value = data.Rfid_tag;
-        document.getElementById('m_fname').value = data.F_name;
-        document.getElementById('m_lname').value = data.L_name;
-        document.getElementById('m_role').value = data.Role;
-        document.getElementById('m_status').value = data.Status;
-        document.getElementById('m_course').value = data.CourseSection_id || '';
-        toggleCourse();
-        new bootstrap.Modal(document.getElementById('addEditModal')).show();
-    }
-
-    function toggleCourse() {
-        const role = document.getElementById('m_role').value;
-        const container = document.getElementById('m_course_container');
-        const courseSelect = document.getElementById('m_course');
-
-        if (role === 'Student') {
-            container.style.display = 'block';
-            courseSelect.setAttribute('required', 'required');
-        } else {
-            container.style.display = 'none';
-            courseSelect.removeAttribute('required'); // This prevents the focusable error
-            courseSelect.value = ""; // Optional: Clear the value when hidden
-        }
-    }
-
-    function deleteUser(id, fname, lname) {
-        Swal.fire({
-            title: `Delete ${fname} ${lname}?`,
-            text: "User must be Inactive and have no schedules.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const f = document.createElement('form');
-                f.method = 'POST';
-                f.innerHTML = `<input type="hidden" name="user_id" value="${id}"><input type="hidden" name="delete_user" value="1">`;
-                document.body.appendChild(f);
-                f.submit();
-            }
-        });
-    }
-    </script>
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
 
-    <?php if (isset($_SESSION['success_message'])): ?>
-    <script>Swal.fire({ icon: 'success', title: 'Success', text: <?= json_encode($_SESSION['success_message']) ?>, timer: 2500, showConfirmButton: false });</script>
-    <?php unset($_SESSION['success_message']); endif; ?>
+    <script>
+        // JS logic remains the same
+        function openAdd() {
+            document.getElementById('modalTitle').innerText = "Add New User";
+            document.getElementById('m_id').value = "";
+            document.querySelector('#addEditModal form').reset();
+            $('#m_special_sched').val(null).trigger('change');
+            toggleRole();
+            new bootstrap.Modal(document.getElementById('addEditModal')).show();
+        }
 
+        function openEdit(data) {
+            document.getElementById('modalTitle').innerText = "Edit User";
+            document.getElementById('m_id').value = data.User_id;
+            document.getElementById('m_rfid').value = data.Rfid_tag || '';
+            document.getElementById('m_fname').value = data.F_name || '';
+            document.getElementById('m_lname').value = data.L_name || '';
+            document.getElementById('m_role').value = data.Role || 'Student';
+            document.getElementById('m_status').value = data.Status || 'Active';
+            document.getElementById('m_course').value = data.cs_id || "";
+            
+            const isIrreg = data.all_special_ids ? true : false;
+            document.getElementById('is_irregular_checkbox').checked = isIrreg;
+            $('#m_special_sched').val(isIrreg ? data.all_special_ids.split(',') : null).trigger('change');
+            
+            toggleRole();
+            new bootstrap.Modal(document.getElementById('addEditModal')).show();
+        }
+
+        function toggleRole() {
+            const role = document.getElementById('m_role').value;
+            const isChecked = document.getElementById('is_irregular_checkbox').checked;
+            document.getElementById('m_course_container').style.display = (role === 'Student') ? 'block' : 'none';
+            document.getElementById('irregular_checkbox_container').style.display = (role === 'Student') ? 'block' : 'none';
+            document.getElementById('special_schedule_container').style.display = (role === 'Student' && isChecked) ? 'block' : 'none';
+        }
+
+        function deleteUser(id, fname, lname) {
+            Swal.fire({
+                title: `Delete ${fname} ${lname}?`,
+                text: "User must be Inactive.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const f = document.createElement('form');
+                    f.method = 'POST';
+                    f.innerHTML = `<input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                   <input type="hidden" name="user_id" value="${id}">
+                                   <input type="hidden" name="delete_user" value="1">`;
+                    document.body.appendChild(f);
+                    f.submit();
+                }
+            });
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const course = document.getElementById('courseFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            document.querySelectorAll('.user-row').forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const rowCourse = row.getAttribute('data-course');
+                const rowStatus = row.getAttribute('data-status');
+                row.style.display = (text.includes(search) && (course === "" || rowCourse === course) && (status === "" || rowStatus === status)) ? "" : "none";
+            });
+        }
+
+        $(document).ready(function() {
+            $('#m_special_sched').select2({ theme: 'bootstrap-5', dropdownParent: $('#addEditModal'), width: '100%' });
+            $('#is_irregular_checkbox').on('change', toggleRole);
+            $('.filter-trigger, #searchInput').on('input change', applyFilters);
+
+            $('#saveUserBtn').on('click', function() {
+                const form = document.querySelector('#addEditModal form');
+                if(!form.checkValidity()) return form.reportValidity();
+                
+                const formData = new FormData(form);
+                formData.append('save_user', '1');
+                const saveBtn = $(this);
+                saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+                
+                $.ajax({
+                    url: window.location.href, 
+                    type: 'POST', 
+                    data: formData, 
+                    processData: false, 
+                    contentType: false,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function(res) {
+                        const data = JSON.parse(res);
+                        if(data.status === 'success') {
+                            Swal.fire('Success', data.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                            saveBtn.prop('disabled', false).html('Save Changes');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <script>Swal.fire({ icon: 'success', title: 'Success', text: '<?php echo $_SESSION['success_message']; ?>', timer: 2500, showConfirmButton: false });</script>
+        <?php unset($_SESSION['success_message']); ?>
+    <?php endif; ?>
     <?php if (isset($_SESSION['error_message'])): ?>
     <script>Swal.fire({ icon: 'warning', title: 'Warning', text: <?= json_encode($_SESSION['error_message']) ?>, showConfirmButton: true });</script>
     <?php unset($_SESSION['error_message']); endif; ?>

@@ -611,7 +611,7 @@ header("Expires: 0");
                             <td><strong>${displayName}</strong></td>
                             <td>${log.Role || 'N/A'}</td>
                             <td>${log.Room_code}</td> 
-                            <td><small>${log.device_type || 'N/A'}</small></td> 
+                            <td><small  class="badge bg-secondary">${log.device_type || 'N/A'}</small></td> 
                             <td>${log.Access_time}</td>
                             <td>${log.Access_type}</td>
                             <td><span class="status ${statusClass}">${log.Status}</span></td>

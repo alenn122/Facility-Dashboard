@@ -234,11 +234,12 @@ if (isset($_GET['edit_id'])) {
                                         </td>
                                         <td class="text-end pe-4 action-buttons">
                                             <a href="device_management.php?edit_id=<?php echo $row['device_id']; ?>" 
-                                               class="btn btn-sm btn-outline-primary me-1" 
-                                               title="Edit Device">
+                                            class="btn btn-success btn-sm me-1" 
+                                            title="Edit Device">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                            
+                                            <button class="btn btn-sm btn-danger delete-btn" 
                                                     data-id="<?php echo $row['device_id']; ?>"
                                                     data-mac="<?php echo htmlspecialchars($row['mac_address']); ?>"
                                                     data-type="<?php echo $row['device_type'] == 'DOOR' ? 'Door/RFID' : 'Power Control'; ?>"
@@ -277,7 +278,7 @@ if (isset($_GET['edit_id'])) {
                             <label class="form-label fw-bold">Device Type <span class="text-danger">*</span></label>
                             <select name="device_type" class="form-select" required>
                                 <option value="">Select Device Type</option>
-                                <option value="DOOR">RFID Door Lock</option>
+                                <option value="DOOR">RFID Door</option>
                                 <option value="POWER">Power Control</option>
                             </select>
                         </div>

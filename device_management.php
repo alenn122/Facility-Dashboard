@@ -278,7 +278,7 @@ if (isset($_GET['edit_id'])) {
                             <label class="form-label fw-bold">Device Type <span class="text-danger">*</span></label>
                             <select name="device_type" class="form-select" required>
                                 <option value="">Select Device Type</option>
-                                <option value="DOOR">RFID Door Lock</option>
+                                <option value="DOOR">RFID Door</option>
                                 <option value="POWER">Power Control</option>
                             </select>
                         </div>

@@ -96,13 +96,7 @@ if ($action === 'table') {
     $final_types = $types;
 }
 
-// Select query including your device_type logic
-$select = "SELECT al.*, u.F_name, u.L_name, u.Role, r.Room_code,
-           CASE 
-               WHEN al.Access_type IN ('Entry', 'Exit') AND u.Role = 'Student' THEN 'DOOR'
-               WHEN al.Status = 'granted' AND u.Role IN ('Faculty', 'Admin') THEN 'DOOR & POWER'
-               ELSE 'DOOR'
-           END AS device_type ";
+$select = "SELECT al.*, u.F_name, u.L_name, u.Role, r.Room_code, al.device_type ";
 
 $stmt = $conn->prepare($select . $base_sql . $conditions . $order_limit);
 if (!empty($final_params)) $stmt->bind_param($final_types, ...$final_params);

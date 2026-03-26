@@ -306,6 +306,7 @@ function displaySchedules(schedules) {
 }
 
 // Create schedule table
+// Updated Create schedule table with Responsive Wrapper
 function createScheduleTable(courseName, schedules) {
     const div = document.createElement('div');
     div.className = 'card mb-4 shadow-sm schedule-card';
@@ -323,6 +324,11 @@ function createScheduleTable(courseName, schedules) {
     const cardBody = document.createElement('div');
     cardBody.className = 'card-body pt-2';
     
+    // --- START OF FIX: ADD RESPONSIVE WRAPPER ---
+    const tableResponsive = document.createElement('div');
+    tableResponsive.className = 'table-responsive'; 
+    // --- END OF FIX ---
+
     const table = document.createElement('table');
     table.className = 'table table-hover align-middle mb-0';
     table.innerHTML = `
@@ -366,10 +372,12 @@ function createScheduleTable(courseName, schedules) {
         </tbody>
     `;
     
-    cardBody.appendChild(table);
+    // Append table to the responsive wrapper, then wrapper to card body
+    tableResponsive.appendChild(table);
+    cardBody.appendChild(tableResponsive);
     div.appendChild(cardBody);
     
-    // Add event listeners to buttons after a short delay
+    // Event listeners
     setTimeout(() => {
         div.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {

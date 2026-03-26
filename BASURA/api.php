@@ -11,61 +11,23 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // --------------------------------------------------------------------
-// 2. THE "HEARTBEAT" (Receive Ping from ESP32) 
-// --------------------------------------------------------------------
-// --------------------------------------------------------------------
-// 2. THE "HEARTBEAT" (Receive Ping from ESP32) 
+// 2. THE "HEARTBEAT" (Receive Ping from ESP32)
 // --------------------------------------------------------------------
 if (isset($_POST['ping'])) {
     $mac = $_POST['mac'];
-    $conn->query("UPDATE devices SET last_seen = NOW(), status = 'Online' WHERE mac_address = '$mac'");
     
-    $res = $conn->query("SELECT d.room_id, c.Status FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
+    // Update THIS specific device to 'Online' and refresh its timestamp
+    $stmt = $conn->prepare("UPDATE devices SET last_seen = NOW(), status = 'Online' WHERE mac_address = ?");
+    $stmt->bind_param("s", $mac);
     
-    if ($res && $res->num_rows > 0) {
-        $row = $res->fetch_assoc();
-        $rid = $row['room_id'];
-
-        if ($row['Status'] == 'Occupied') {
-            // --- NEW: ADMIN OVERRIDE CHECK ---
-            // Find the role of the last person who entered this room
-            $last_user_query = $conn->query("SELECT u.Role FROM access_log l 
-                                             JOIN users u ON l.User_id = u.User_id 
-                                             WHERE l.Room_id = '$rid' AND l.Status = 'granted' AND l.Access_type = 'Entry' 
-                                             ORDER BY l.Access_time DESC LIMIT 1");
-            
-            if ($last_user_query && $last_user_query->num_rows > 0) {
-                $last_user = $last_user_query->fetch_assoc();
-                // If an Admin is inside, ignore the schedule and stay ON
-                if ($last_user['Role'] == 'Admin') {
-                    echo "PONG";
-                    exit();
-                }
-            }
-            // --- END ADMIN OVERRIDE ---
-
-            $day = date('D'); 
-            $time = date('H:i:s');
-            
-            $sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time LIMIT 1");
-
-            if ($sched->num_rows > 0) {
-                $s = $sched->fetch_assoc();
-                $seconds_left = strtotime($s['End_time']) - strtotime($time);
-
-                if ($seconds_left > 0 && $seconds_left <= 300) {
-                    echo "WARNING_5MIN";
-                    exit();
-                }
-            } else {
-                $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$rid'");
-                echo "FORCE_OFF"; 
-                exit();
-            }
-        }
+    if ($stmt->execute()) {
+        echo "PONG"; // Tell ESP32 the ping was received
+    } else {
+        echo "ERROR";
     }
-    echo "PONG";
-    exit();
+    
+    $stmt->close();
+    exit(); // Stop execution here so we don't run any other code
 }
 
 // 1. RECEIVE DATA
@@ -169,7 +131,7 @@ function check_schedule($user_id, $room_id, $course_section_id) {
     $day = date('D'); 
     $time = date('H:i:s');
 
-    // 1. Check if the user is the FACULTY assigned to this room right now
+    // 1. First, check if the user is the FACULTY assigned to this room right now
     $faculty_sql = "SELECT Schedule_id FROM schedule 
                     WHERE Room_id = '$room_id' 
                     AND Faculty_id = '$user_id' 
@@ -181,21 +143,7 @@ function check_schedule($user_id, $room_id, $course_section_id) {
         return $faculty_res->fetch_assoc();
     }
 
-    // 2. [NEW] Check for INDIVIDUAL PERMISSION (Irregular / Working Students)
-    // This looks at the bridge table we created to see if an admin gave this specific user a "pass"
-    $special_sql = "SELECT s.Schedule_id FROM schedule s
-                    JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id
-                    WHERE s.Room_id = '$room_id' 
-                    AND ip.User_id = '$user_id' 
-                    AND s.Day = '$day'
-                    AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
-    
-    $special_res = $conn->query($special_sql);
-    if ($special_res && $special_res->num_rows > 0) {
-        return $special_res->fetch_assoc(); // Access Granted via Special Permission
-    }
-
-    // 3. [EXISTING] Check if it's a REGULAR STUDENT assigned via CourseSection
+    // 2. If not faculty, check if it's a STUDENT assigned via CourseSection
     if (!empty($course_section_id) && $course_section_id !== "NULL") {
         $student_sql = "SELECT s.Schedule_id FROM schedule s
                         JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
@@ -209,6 +157,7 @@ function check_schedule($user_id, $room_id, $course_section_id) {
 
     return false;
 }
+
 
 // Update the function definition to include $dt (Device Type)
 function log_access($u, $r, $rm, $s, $t, $st, $dt = null) {

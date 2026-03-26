@@ -169,33 +169,27 @@ function check_schedule($user_id, $room_id, $course_section_id) {
     $day = date('D'); 
     $time = date('H:i:s');
 
-    // 1. Check if the user is the FACULTY assigned to this room right now
+    // 1. First, check if the user is the FACULTY assigned to this room right now
     $faculty_sql = "SELECT Schedule_id FROM schedule 
                     WHERE Room_id = '$room_id' 
                     AND Faculty_id = '$user_id' 
                     AND Day = '$day'
                     AND '$time' BETWEEN Start_time AND End_time LIMIT 1";
+
+
+    $individual_sql = "SELECT s.Schedule_id FROM schedule s
+                    JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id
+                    WHERE s.Room_id = '$room_id' 
+                    AND s.Day = '$day'
+                    AND ip.User_id = '$user_id'
+                    AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
     
     $faculty_res = $conn->query($faculty_sql);
     if ($faculty_res && $faculty_res->num_rows > 0) {
         return $faculty_res->fetch_assoc();
     }
 
-    // 2. [NEW] Check for INDIVIDUAL PERMISSION (Irregular / Working Students)
-    // This looks at the bridge table we created to see if an admin gave this specific user a "pass"
-    $special_sql = "SELECT s.Schedule_id FROM schedule s
-                    JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id
-                    WHERE s.Room_id = '$room_id' 
-                    AND ip.User_id = '$user_id' 
-                    AND s.Day = '$day'
-                    AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
-    
-    $special_res = $conn->query($special_sql);
-    if ($special_res && $special_res->num_rows > 0) {
-        return $special_res->fetch_assoc(); // Access Granted via Special Permission
-    }
-
-    // 3. [EXISTING] Check if it's a REGULAR STUDENT assigned via CourseSection
+    // 2. If not faculty, check if it's a STUDENT assigned via CourseSection
     if (!empty($course_section_id) && $course_section_id !== "NULL") {
         $student_sql = "SELECT s.Schedule_id FROM schedule s
                         JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
@@ -209,6 +203,7 @@ function check_schedule($user_id, $room_id, $course_section_id) {
 
     return false;
 }
+
 
 // Update the function definition to include $dt (Device Type)
 function log_access($u, $r, $rm, $s, $t, $st, $dt = null) {

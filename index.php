@@ -82,11 +82,11 @@ header("Expires: 0");
                     <table class="table align-middle">
                         <thead class="table-light">
                             <tr>
+                                <th>User Name</th>
                                 <th>Role</th>
-                                <th>Rfid tag</th>
-                                <th>Room Code</th>
-                                <th>Access type</th>
-                                <th>Access time</th>
+                                <th>Room</th>
+                                <th>Access_Type</th>
+                                <th>Access_time</th>
                                 <th>Access</th>
                                 <th>Status</th>
                             </tr>
@@ -96,19 +96,15 @@ header("Expires: 0");
                             <?php
                             $log_id = $conn->query("
                             SELECT 
-                                    al.Log_id,
+                                    u.F_name,
+                                    u.L_name,
                                     al.Rfid_tag,
                                     al.Access_time,
                                     al.Access_type,
                                     al.Status,
                                     u.Role,
                                     r.Room_code,
-                                    -- Logic to display device type without needing a Join
-                                    CASE 
-                                        WHEN al.Access_type IN ('Entry', 'Exit') AND u.Role = 'Student' THEN 'DOOR'
-                                        WHEN al.Status = 'granted' AND u.Role IN ('Faculty', 'Admin') THEN 'DOOR & POWER'
-                                        ELSE 'DOOR'
-                                    END AS device_type
+                                   al.device_type
                                 FROM access_log al
                                 LEFT JOIN users u ON al.User_id = u.User_id
                                 LEFT JOIN classrooms r ON al.Room_id = r.Room_id
@@ -118,11 +114,13 @@ header("Expires: 0");
                             ?>
 
                             <?php if ($log_id->num_rows > 0): ?>
+                             
                                 <?php while ($row = $log_id->fetch_assoc()): ?>
                                     <tr>
-                                        <!-- <td><?php echo $row['Log_id']; ?></td> -->
+                                        
+
+                                        <td><strong><?php echo $row['F_name'] . ' ' . $row['L_name'];?></strong></td>
                                         <td><?php echo $row['Role']; ?></td>
-                                        <td><?php echo $row['Rfid_tag']; ?></td>
                                         <td><?php echo $row['Room_code']; ?></td>
                                         <td><span class="badge bg-secondary"><?php echo $row['device_type']; ?></span></td>
                                         <td><?php echo date('M d, Y h:i A', strtotime($row['Access_time'])); ?></td>
@@ -172,12 +170,19 @@ header("Expires: 0");
                         
                         if (data.logs.length > 0) {
                             data.logs.forEach(log => {
+                                let displayName = "Guest";
+                                if (log.F_name || log.L_name) {
+                                    displayName = `${log.F_name || ''} ${log.L_name || ''}`.trim();
+                                } else if (log.Rfid_tag) {
+                                    displayName = `Unknown (${log.Rfid_tag})`;
+                                }
                                 const row = document.createElement('tr');
                                 row.innerHTML = `
+                                                                                                        
+                                    <td><strong>${displayName}</strong></td>
                                     <td>${log.Role}</td>
-                                    <td>${log.Rfid_tag}</td>
                                     <td>${log.Room_code}</td>
-                                    <td>${log.device_type}</td>
+                                    <td><small class="badge bg-secondary">${log.device_type || 'N/A'}</small></td> 
                                     <td>${log.Access_time}</td>
                                     <td>${log.Access_type}</td>
                                     <td><span class="status ${log.Status.toLowerCase()}">${log.Status}</span></td>

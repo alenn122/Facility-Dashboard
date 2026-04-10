@@ -1,559 +1,789 @@
-<?php
-// 1. Session and Auth must come first before ANY output
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
+<?php 
+session_start();
 include 'conn.php';
 include "session_auth.php";
 
-// 2. CSRF Token Generation
+// CSRF Token Generation
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// 3. Prevent browser caching
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Cache-Control: post-check=0, pre-check=0", false);
-header("Pragma: no-cache");
-header("Expires: 0");
-
-// --- BACKEND LOGIC ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
-    // Verify CSRF token
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die(json_encode(['status' => 'error', 'message' => 'CSRF token validation failed']));
-    }
-
-    if (isset($_POST['save_user'])) {
-        $id = !empty($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $rfid = $_POST['rfid_tag'];
-        $fname = $_POST['f_name'];
-        $lname = $_POST['l_name'];
-        $role = $_POST['role'];
-        $status = $_POST['status'];
-        $isIrregular = isset($_POST['is_irregular']) ? 1 : 0;
-        $courseId = !empty($_POST['course_id']) ? intval($_POST['course_id']) : null;
-        
-        // Input validation
-        $errors = [];
-        if (empty($rfid)) $errors[] = "RFID tag is required";
-        if (empty($fname)) $errors[] = "First name is required";
-        if (empty($lname)) $errors[] = "Last name is required";
-        if (!in_array($role, ['Student', 'Faculty', 'Admin'])) $errors[] = "Invalid role";
-        
-        if (!empty($errors)) {
-            $error_msg = implode(", ", $errors);
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-                echo json_encode(['status' => 'error', 'message' => $error_msg]);
-                exit;
-            }
-            $_SESSION['error_message'] = $error_msg;
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit();
-        }
-        
-        if ($id > 0) {
-            $sql = "UPDATE users SET Rfid_tag=?, F_name=?, L_name=?, Role=?, Status=?, courseSection_id=? WHERE User_id=?";
-            $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "sssssii", $rfid, $fname, $lname, $role, $status, $courseId, $id);
-        } else {
-            $sql = "INSERT INTO users (Rfid_tag, F_name, L_name, Role, Status, courseSection_id) VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt, "sssssi", $rfid, $fname, $lname, $role, $status, $courseId);
-        }
-        
-        $res = mysqli_stmt_execute($stmt);
-        
-        if ($res) {
-            $current_user_id = ($id > 0) ? $id : mysqli_insert_id($conn);
-            
-            $deleteStmt = mysqli_prepare($conn, "DELETE FROM individual_permissions WHERE User_id = ?");
-            mysqli_stmt_bind_param($deleteStmt, "i", $current_user_id);
-            mysqli_stmt_execute($deleteStmt);
-            
-            if ($isIrregular && isset($_POST['special_schedule_ids']) && is_array($_POST['special_schedule_ids'])) {
-                $insertStmt = mysqli_prepare($conn, "INSERT INTO individual_permissions (User_id, Schedule_id, Reason) VALUES (?, ?, ?)");
-                $reason = 'Irregular/Working Student';
-                foreach ($_POST['special_schedule_ids'] as $sched_id) {
-                    $sched_id = intval($sched_id);
-                    mysqli_stmt_bind_param($insertStmt, "iis", $current_user_id, $sched_id, $reason);
-                    mysqli_stmt_execute($insertStmt);
-                }
-                mysqli_stmt_close($insertStmt);
-            }
-            mysqli_stmt_close($deleteStmt);
-        }
-        mysqli_stmt_close($stmt);
-        
-        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['status' => $res ? 'success' : 'error', 'message' => $res ? 'User saved!' : mysqli_error($conn)]);
-            exit;
-        }
-        
-        $_SESSION[$res ? 'success_message' : 'error_message'] = $res ? ($id > 0 ? 'User updated!' : 'User added!') : 'Database error: ' . mysqli_error($conn);
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
-    
-    // SECURE DELETE LOGIC
-    if (isset($_POST['delete_user'])) {
-        $id = intval($_POST['user_id']);
-
-        // 1. Fetch user status and role
-        $user_check = mysqli_query($conn, "SELECT Status, Role FROM users WHERE User_id=$id");
-        $user_data = mysqli_fetch_assoc($user_check);
-
-        if ($user_data) {
-            // RULE: Must be Inactive to delete
-            if ($user_data['Status'] === 'Active') {
-                $_SESSION['error_message'] = 'Cannot delete an Active user. Set status to Inactive first.';
-            } else {
-                // 2. Check if this user is assigned to any schedules (Prevents Foreign Key Error)
-                $sched_check = mysqli_query($conn, "SELECT COUNT(*) AS total FROM schedule WHERE Faculty_id=$id");
-                $has_schedules = mysqli_fetch_assoc($sched_check)['total'];
-
-                if ($has_schedules > 0) {
-                    $_SESSION['error_message'] = 'Cannot delete: This user is still assigned to ' . $has_schedules . ' class schedule(s).';
-                } else {
-                    // 3. Safe to delete
-                    $res = mysqli_query($conn, "DELETE FROM users WHERE User_id=$id");
-                    if ($res) {
-                        $_SESSION['success_message'] = 'User deleted successfully!';
-                    } else {
-                        $_SESSION['error_message'] = 'Delete failed: ' . mysqli_error($conn);
-                    }
-                }
-            }
-        }
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
-}
-
-// Stats Queries
+// Get stats for KPI cards
 $student_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Student' AND Status='Active'"))['c'];
-$faculty_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role IN ('Faculty','Admin') AND Status='Active'"))['c'];
+$faculty_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Faculty' AND Status='Active'"))['c'];
+$admin_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Admin' AND Status='Active'"))['c'];
+$cleaning_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Cleaning' AND Status='Active'"))['c'];
+$security_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Security' AND Status='Active'"))['c'];
 $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Status='Inactive'"))['c'];
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="img/loalogo.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/bootstrap.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <title>USERS - Smart Classroom</title>
+    <style>
+        .excel-btn {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+        .excel-btn:hover {
+            background-color: #218838 !important;
+            border-color: #1e7e34 !important;
+        }
+        .import-preview-table {
+            font-size: 0.85rem;
+        }
+        .import-preview-table .valid-row {
+            background-color: #d4edda;
+        }
+        .import-preview-table .invalid-row {
+            background-color: #f8d7da;
+        }
+        .error-list {
+            font-size: 0.75rem;
+            color: #dc3545;
+            margin: 0;
+            padding-left: 1rem;
+        }
+        .stat-icon-box.bg-green-soft { background-color: rgba(40, 167, 69, 0.15); }
+        .text-green { color: #28a745; }
+        .stat-icon-box.bg-orange-soft { background-color: rgba(253, 126, 20, 0.15); }
+        .text-orange { color: #fd7e14; }
+        .stat-icon-box.bg-indigo-soft { background-color: rgba(102, 16, 242, 0.15); }
+        .text-indigo { color: #6610f2; }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
 </head>
+
 <body>
 
     <?php include 'sidebar.php'; ?>
-
+    
     <div class="main-content p-4">
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        
+        <!-- Header -->
         <div class="card shadow-sm mb-4">
             <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <h3 class="fw-bold mb-0">User Management</h3>
-                <div class="input-group room-search">
+                <div class="input-group room-search" style="max-width: 400px;">
                     <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="searchInput" placeholder="Search Name, ID, Course...">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search by Name, RFID, Role...">
                 </div>
             </div>
         </div>
-
+        
+        <!-- KPI Cards -->
         <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4">
+            <div class="col-md-6 col-lg-2">
                 <div class="card border-0 shadow-sm p-3 h-100">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon-box bg-purple-soft text-purple me-3"><i class="fas fa-user-graduate fs-4"></i></div>
-                        <div><h2 class="mb-0 fw-bold"><?php echo $student_count; ?></h2><small class="text-muted">Active Students</small></div>
+                        <div><h2 class="mb-0 fw-bold" id="studentCount"><?php echo $student_count; ?></h2><small class="text-muted">Students</small></div>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-md-6 col-lg-2">
                 <div class="card border-0 shadow-sm p-3 h-100">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon-box bg-pink-soft text-pink me-3"><i class="fas fa-chalkboard-teacher fs-4"></i></div>
-                        <div><h2 class="mb-0 fw-bold"><?php echo $faculty_count; ?></h2><small class="text-muted">Active Faculty</small></div>
+                        <div><h2 class="mb-0 fw-bold" id="facultyCount"><?php echo $faculty_count; ?></h2><small class="text-muted">Faculty</small></div>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-md-6 col-lg-2">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon-box bg-indigo-soft text-indigo me-3"><i class="fas fa-user-shield fs-4"></i></div>
+                        <div><h2 class="mb-0 fw-bold" id="adminCount"><?php echo $admin_count; ?></h2><small class="text-muted">Admins</small></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon-box bg-green-soft text-green me-3"><i class="fas fa-broom fs-4"></i></div>
+                        <div><h2 class="mb-0 fw-bold" id="cleaningCount"><?php echo $cleaning_count; ?></h2><small class="text-muted">Cleaning</small></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon-box bg-orange-soft text-orange me-3"><i class="fas fa-shield-alt fs-4"></i></div>
+                        <div><h2 class="mb-0 fw-bold" id="securityCount"><?php echo $security_count; ?></h2><small class="text-muted">Security</small></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2">
                 <div class="card border-0 shadow-sm p-3 h-100">
                     <div class="d-flex align-items-center">
                         <div class="stat-icon-box bg-cyan-soft text-cyan me-3"><i class="fas fa-user-slash fs-4"></i></div>
-                        <div><h2 class="mb-0 fw-bold"><?php echo $inactive_count; ?></h2><small class="text-muted">Inactive Users</small></div>
+                        <div><h2 class="mb-0 fw-bold" id="inactiveCount"><?php echo $inactive_count; ?></h2><small class="text-muted">Inactive</small></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="card border-0 shadow-sm p-4">
-            <ul class="nav nav-pills mb-4" id="userTabs" role="tablist">
-                <li class="nav-item"><button class="nav-link active custom-pill" data-bs-toggle="pill" data-bs-target="#studentsTab" type="button">Students <span class="badge ms-1 bg-danger"><?php echo $student_count; ?></span></button></li>
-                <li class="nav-item"><button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#facultyTab" type="button">Faculty <span class="badge ms-1 bg-danger"><?php echo $faculty_count; ?></span></button></li>
-                <li class="nav-item"><button class="nav-link custom-pill" data-bs-toggle="pill" data-bs-target="#allTab" type="button">All Users</button></li>
-            </ul>
-
-            <div class="d-flex flex-wrap gap-2 mb-4">
-                <select class="form-select w-auto filter-trigger" id="courseFilter">
-                    <option value="">All Courses</option>
-                    <?php 
-                    $cRes = mysqli_query($conn, "SELECT CourseSection FROM course_section ORDER BY CourseSection");
-                    while($c = mysqli_fetch_assoc($cRes)) {
-                        echo "<option value='" . htmlspecialchars($c['CourseSection']) . "'>" . htmlspecialchars($c['CourseSection']) . "</option>";
+        
+        <!-- Filters & Buttons -->
+        <div class="row g-3 mb-4 align-items-center">
+            <div class="col-md-3 col-lg-2">
+                <select class="form-select" id="roleFilter">
+                    <option value="all" selected>All Roles</option>
+                    <option value="Student">Student</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Cleaning">Cleaning</option>
+                    <option value="Security">Security</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-lg-2">
+                <select class="form-select" id="courseFilter">
+                    <option value="all" selected>All Courses</option>
+                    <?php
+                    $courses_sql = "SELECT * FROM course_section ORDER BY CourseSection";
+                    $courses_result = $conn->query($courses_sql);
+                    while ($course = $courses_result->fetch_assoc()) {
+                        echo "<option value='{$course['CourseSection']}'>{$course['CourseSection']}</option>";
                     }
                     ?>
                 </select>
-                <select class="form-select w-auto filter-trigger" id="statusFilter">
-                    <option value="">All Status</option>
+            </div>
+            <div class="col-md-3 col-lg-2">
+                <select class="form-select" id="statusFilter">
+                    <option value="all" selected>All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
-                <button class="btn btn-secondary ms-md-auto" onclick="resetFilters()"><i class="fas fa-times me-2"></i>Clear Filters</button>
-                <button class="main-btn" onclick="openAdd()"><i class="fas fa-user-plus me-2"></i>Add User</button>
             </div>
+            <div class="col-md-6 col-lg-2">
+                <button class="secondary-btn w-100" id="clearFilters">
+                    <i class="fas fa-times me-1"></i> Clear Filters
+                </button>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <button class="main-btn w-100" id="addUserBtn">
+                    <i class="fas fa-user-plus me-1"></i> Add User
+                </button>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <button class="main-btn w-100 excel-btn" id="importExcelBtn">
+                    <i class="fas fa-file-excel me-1"></i> Import Excel
+                </button>
+            </div>
+        </div>
 
-            <div class="tab-content">
-                <?php
-                $tabs = ['studentsTab' => "WHERE u.Role = 'Student'", 'facultyTab' => "WHERE u.Role IN ('Faculty','Admin')", 'allTab' => ""];
-                $first = true;
-                foreach ($tabs as $tabId => $cond):
-                    $sql = "SELECT u.*, cs.CourseSection,u.courseSection_id as cs_id, GROUP_CONCAT(ip.Schedule_id) as all_special_ids 
-                            FROM users u 
-                            LEFT JOIN course_section cs ON u.courseSection_id = cs.CourseSection_id 
-                            LEFT JOIN individual_permissions ip ON u.User_id = ip.User_id
-                            $cond GROUP BY u.User_id ORDER BY u.User_id DESC";
-                    $result = mysqli_query($conn, $sql);
-                ?>
-                <div class="tab-pane fade <?php echo $first ? 'show active' : ''; ?>" id="<?php echo $tabId; ?>">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th><th>RFID</th><th>First</th><th>Last</th>
-                                    <?php if($tabId !== 'facultyTab'): ?><th>Course</th><?php endif; ?>
-                                    <th>Status</th><th class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while($row = mysqli_fetch_assoc($result)): 
-                                    $isIrreg = !empty($row['all_special_ids']); 
-                                ?>
-                                <tr class="user-row <?php echo $isIrreg ? 'irregular-indicator':''; ?>" data-course="<?php echo htmlspecialchars($row['CourseSection'] ?? ''); ?>" data-status="<?php echo htmlspecialchars($row['Status']); ?>">
-                                    <td><?php echo htmlspecialchars($row['User_id']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['Rfid_tag']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['F_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['L_name']); ?></td>
-                                    <?php if($tabId !== 'facultyTab'): ?>
-                                    <td>
-                                        <?php echo htmlspecialchars($row['CourseSection'] ?? 'N/A'); ?>
-                                        <?php if($isIrreg): ?><span class="badge bg-warning text-dark ms-1">Irregular/Working</span><?php endif; ?>
-                                    </td>
-                                    <?php endif; ?>
-                                    <td><span class="badge <?php echo $row['Status']=='Active'?'bg-success':'bg-secondary'; ?>"><?php echo htmlspecialchars($row['Status']); ?></span></td>
-                                    <td class="text-center">
-                                        <button class="btn btn-success btn-sm me-1" onclick='openEdit(<?php echo json_encode($row); ?>)'><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteUser(<?php echo $row['User_id']; ?>, '<?php echo addslashes($row['F_name']); ?>', '<?php echo addslashes($row['L_name']); ?>')"><i class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- Users Container -->
+        <div id="usersContainer">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <?php $first=false; endforeach; ?>
+                <p class="mt-2">Loading users...</p>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="addEditModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="POST" class="modal-content">
+    <!-- Add/Edit User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="modalTitle">Add User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="userModalLabel">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="user_id" id="m_id">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <label class="form-label small">RFID Tag</label>
-                            <span id="scannerStatus" class="badge bg-secondary mb-1" style="font-size: 0.7rem;"><i class="fas fa-plug me-1"></i>Scanner Offline</span>
+                    <form id="userForm">
+                        <input type="hidden" id="userId" name="user_id">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <input type="hidden" name="action" value="save_user">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="rfidTag" class="form-label">RFID Tag *</label>
+                                <input type="text" class="form-control" id="rfidTag" name="rfid_tag" required placeholder="Scan or enter RFID tag">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" name="f_name" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" name="l_name" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="role" class="form-label">Role *</label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="Student">Student</option>
+                                    <option value="Faculty">Faculty</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Cleaning">Cleaning Personnel</option>
+                                    <option value="Security">Security Personnel</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-12" id="courseSectionContainer">
+                                <label for="courseSection" class="form-label">Course Section (For Students)</label>
+                                <select class="form-select" id="courseSection" name="course_id">
+                                    <option value="">Select Course Section</option>
+                                    <?php
+                                    $courses_sql = "SELECT * FROM course_section ORDER BY CourseSection";
+                                    $courses_result = $conn->query($courses_sql);
+                                    while ($course = $courses_result->fetch_assoc()) {
+                                        echo "<option value='{$course['CourseSection_id']}'>{$course['CourseSection']}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
                         </div>
-                        <input type="text" name="rfid_tag" id="m_rfid" class="form-control" required placeholder="Scan RFID card...">
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="form-label small">First Name</label><input type="text" name="f_name" id="m_fname" class="form-control" required></div>
-                        <div class="col-6"><label class="form-label small">Last Name</label><input type="text" name="l_name" id="m_lname" class="form-control" required></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small">Role</label>
-                        <select name="role" id="m_role" class="form-select" onchange="toggleRole()">
-                            <option value="Student">Student</option><option value="Faculty">Faculty</option><option value="Admin">Admin</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="m_course_container">
-                        <label class="form-label small">Course Section</label>
-                        <select name="course_id" id="m_course" class="form-select">
-                            <option value="">None</option>
-                            <?php 
-                            $cRes = mysqli_query($conn, "SELECT * FROM course_section ORDER BY CourseSection");
-                            while($c = mysqli_fetch_assoc($cRes)) {
-                                echo "<option value='" . $c['CourseSection_id'] . "'>" . htmlspecialchars($c['CourseSection']) . "</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="irregular_checkbox_container">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="is_irregular_checkbox" name="is_irregular">
-                            <label class="form-check-label checkbox-label" for="is_irregular_checkbox">Irregular / Working Student</label>
-                        </div>
-                    </div>
-                    <div id="special_schedule_container" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-warning">Special Schedule Overrides</label>
-                            <select class="form-select select2-enable" id="m_special_sched" name="special_schedule_ids[]" multiple style="width: 100%;">
-                                <?php
-                                $sRes = mysqli_query($conn, "SELECT s.Schedule_id, s.Day, sub.Code FROM schedule s JOIN subject sub ON s.Subject_id = sub.Subject_id ORDER BY sub.Code");
-                                while($s = mysqli_fetch_assoc($sRes)) {
-                                    echo "<option value='" . $s['Schedule_id'] . "'>" . htmlspecialchars($s['Code'] . " (" . $s['Day'] . ")") . "</option>";
-                                }
-                                ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3"><label class="form-label small">Status</label><select name="status" id="m_status" class="form-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="saveUserBtn" class="main-btn">Save Changes</button>
+                    <button type="button" class="main-btn" id="saveUserBtn">Save User</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Import Excel Modal -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel">
+                        <i class="fas fa-file-excel me-2" style="color: #28a745;"></i>
+                        Import Users from Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Excel File Requirements:</h6>
+                                <p class="small mb-2">Your Excel file must have these <strong>6 columns</strong> in this exact order:</p>
+                                <code>RFID Tag | First Name | Last Name | Role | Status | Course Section</code>
+                                <p class="small text-muted mb-1">Valid Roles: Student, Faculty, Admin, Cleaning, Security</p>
+                                <p class="small text-muted">Valid Status: Active, Inactive (defaults to Active if empty)</p>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-success" id="downloadTemplateBtn">
+                                        <i class="fas fa-download me-1"></i> Download Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form id="importExcelForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" id="importCsrfToken" value="<?php echo $_SESSION['csrf_token']; ?>">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label fw-bold">Select Excel File</label>
+                            <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx, .xls" required>
+                            <div class="form-text">Supported formats: .xlsx, .xls (Max size: 5MB)</div>
+                        </div>
+                        
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">Import Options:</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="skipFirstRow" checked>
+                                    <label class="form-check-label" for="skipFirstRow">Skip first row (headers)</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="updateExisting">
+                                    <label class="form-check-label" for="updateExisting">Update existing users (if RFID tag found)</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="autoCreateMissing">
+                                    <label class="form-check-label" for="autoCreateMissing">Auto-create missing course sections</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="importProgress" style="display: none;">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="importProgressBar" style="width: 0%">0%</div>
+                        </div>
+                        <p class="text-center text-muted small" id="progressStatus">Processing...</p>
+                    </div>
+                    
+                    <div id="importPreview" style="display: none;">
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Preview & Validation Results</h6>
+                            <span class="badge bg-secondary" id="previewCount">0 rows</span>
+                        </div>
+                        <div class="table-responsive" style="max-height: 400px;">
+                            <table class="table table-sm table-bordered import-preview-table">
+                                <thead class="table-light">
+                                    <tr><th>#</th><th>RFID</th><th>First Name</th><th>Last Name</th><th>Role</th><th>Status</th><th>Course</th><th>Valid</th><th>Errors</th></tr>
+                                </thead>
+                                <tbody id="previewBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="previewSummary" class="mt-2 small"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="processImportBtn" disabled>
+                        <i class="fas fa-upload me-1"></i> Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php $conn->close(); ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="js/script.js"></script>
-
     <script>
-        // JS logic remains the same
-        function openAdd() {
-            document.getElementById('modalTitle').innerText = "Add New User";
-            document.getElementById('m_id').value = "";
-            document.querySelector('#addEditModal form').reset();
-            $('#m_special_sched').val(null).trigger('change');
-            toggleRole();
-            new bootstrap.Modal(document.getElementById('addEditModal')).show();
-        }
-
-        function openEdit(data) {
-            document.getElementById('modalTitle').innerText = "Edit User";
-            document.getElementById('m_id').value = data.User_id;
-            document.getElementById('m_rfid').value = data.Rfid_tag || '';
-            document.getElementById('m_fname').value = data.F_name || '';
-            document.getElementById('m_lname').value = data.L_name || '';
-            document.getElementById('m_role').value = data.Role || 'Student';
-            document.getElementById('m_status').value = data.Status || 'Active';
-            document.getElementById('m_course').value = data.cs_id || "";
+        $(document).ready(function() {
+            let allUsers = [];
             
-            const isIrreg = data.all_special_ids ? true : false;
-            document.getElementById('is_irregular_checkbox').checked = isIrreg;
-            $('#m_special_sched').val(isIrreg ? data.all_special_ids.split(',') : null).trigger('change');
+            // Load users on page load
+            loadUsers();
             
-            toggleRole();
-            new bootstrap.Modal(document.getElementById('addEditModal')).show();
+            function loadUsers() {
+                $('#loadingOverlay').show();
+                $.ajax({
+                    url: 'users_api.php',
+                    type: 'POST',
+                    data: { action: 'get_users' },
+                    dataType: 'json',
+                    success: function(response) {
+                        $('#loadingOverlay').hide();
+                        if (response.success) {
+                            allUsers = response.users;
+                            renderUsers(allUsers);
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#loadingOverlay').hide();
+                        console.error('Error:', status, error);
+                        Swal.fire('Error', 'Failed to load users: ' + status, 'error');
+                    }
+                });
+            }
+            
+            function renderUsers(users) {
+                const roleFilter = $('#roleFilter').val();
+                const courseFilter = $('#courseFilter').val();
+                const statusFilter = $('#statusFilter').val();
+                const searchTerm = $('#searchInput').val().toLowerCase();
+                
+                let filteredUsers = users.filter(user => {
+                    if (roleFilter !== 'all' && user.Role !== roleFilter) return false;
+                    if (courseFilter !== 'all' && user.CourseSection !== courseFilter) return false;
+                    if (statusFilter !== 'all' && user.Status !== statusFilter) return false;
+                    if (searchTerm && !`${user.F_name} ${user.L_name} ${user.Rfid_tag} ${user.Role}`.toLowerCase().includes(searchTerm)) return false;
+                    return true;
+                });
+                
+                if (filteredUsers.length === 0) {
+                    $('#usersContainer').html('<div class="text-center py-5"><i class="fas fa-users fa-3x text-muted mb-3"></i><p class="text-muted">No users found</p></div>');
+                    return;
+                }
+                
+                const students = filteredUsers.filter(u => u.Role === 'Student');
+                const faculty = filteredUsers.filter(u => u.Role === 'Faculty');
+                const staff = filteredUsers.filter(u => ['Admin', 'Cleaning', 'Security'].includes(u.Role));
+                
+                let html = `
+                    <ul class="nav nav-pills mb-4" id="userTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#studentsTab">Students <span class="badge bg-danger ms-1">${students.length}</span></button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#facultyTab">Faculty <span class="badge bg-danger ms-1">${faculty.length}</span></button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#staffTab">Staff <span class="badge bg-danger ms-1">${staff.length}</span></button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#allTab">All Users <span class="badge bg-danger ms-1">${filteredUsers.length}</span></button></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="studentsTab">${renderUserTable(students, 'students')}</div>
+                        <div class="tab-pane fade" id="facultyTab">${renderUserTable(faculty, 'faculty')}</div>
+                        <div class="tab-pane fade" id="staffTab">${renderUserTable(staff, 'staff')}</div>
+                        <div class="tab-pane fade" id="allTab">${renderUserTable(filteredUsers, 'all')}</div>
+                    </div>
+                `;
+                
+                $('#usersContainer').html(html);
+            }
+            
+            function renderUserTable(users, type) {
+                if (users.length === 0) return '<div class="text-center py-4"><p class="text-muted">No users found</p></div>';
+                
+                let table = '<div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>ID</th><th>RFID</th><th>First Name</th><th>Last Name</th><th>Role</th>';
+                if (type === 'students' || type === 'all') table += '<th>Course</th>';
+                table += '<th>Status</th><th class="text-center">Actions</th></thead><tbody>';
+                
+                users.forEach(user => {
+                    table += `<tr>
+                        <td>${user.User_id}</td>
+                        <td>${escapeHtml(user.Rfid_tag)}</td>
+                        <td>${escapeHtml(user.F_name)}</td>
+                        <td>${escapeHtml(user.L_name)}</td>
+                        <td><span class="badge bg-secondary">${user.Role}</span></td>`;
+                    if (type === 'students' || type === 'all') {
+                        table += `<td>${escapeHtml(user.CourseSection || 'N/A')}</td>`;
+                    }
+                    table += `<td><span class="badge ${user.Status === 'Active' ? 'bg-success' : 'bg-secondary'}">${user.Status}</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-success btn-sm me-1" onclick='editUser(${JSON.stringify(user).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.User_id}, '${escapeHtml(user.F_name)}', '${escapeHtml(user.L_name)}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+                
+                table += '</tbody></table></div>';
+                return table;
+            }
+            
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str).replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+            
+            // Filter handlers
+            $('#roleFilter, #courseFilter, #statusFilter, #searchInput').on('change keyup', function() {
+                renderUsers(allUsers);
+            });
+            
+            $('#clearFilters').click(function() {
+                $('#roleFilter').val('all');
+                $('#courseFilter').val('all');
+                $('#statusFilter').val('all');
+                $('#searchInput').val('');
+                renderUsers(allUsers);
+            });
+            
+            // Add User
+            $('#addUserBtn').click(function() {
+                $('#userModalLabel').text('Add New User');
+                $('#userForm')[0].reset();
+                $('#userId').val('');
+                $('#courseSectionContainer').show();
+                new bootstrap.Modal(document.getElementById('userModal')).show();
+            });
+            
+            // Save User
+            $('#saveUserBtn').click(function() {
+                const formData = new FormData($('#userForm')[0]);
+                
+                $('#loadingOverlay').show();
+                $.ajax({
+                    url: 'users_api.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#loadingOverlay').hide();
+                        if (response.success) {
+                            Swal.fire('Success', response.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        $('#loadingOverlay').hide();
+                        Swal.fire('Error', 'Failed to save user', 'error');
+                    }
+                });
+            });
+            
+            $('#role').change(function() {
+                if ($(this).val() === 'Student') {
+                    $('#courseSectionContainer').show();
+                } else {
+                    $('#courseSectionContainer').hide();
+                }
+            });
+            
+            // Import Excel Functions
+            let importedData = [];
+            
+            $('#importExcelBtn').click(function() {
+                $('#importExcelForm')[0].reset();
+                $('#importPreview').hide();
+                $('#importProgress').hide();
+                $('#processImportBtn').prop('disabled', true);
+                $('#skipFirstRow').prop('checked', true);
+                $('#updateExisting').prop('checked', false);
+                $('#autoCreateMissing').prop('checked', false);
+                importedData = [];
+                new bootstrap.Modal(document.getElementById('importExcelModal')).show();
+            });
+            
+            $('#downloadTemplateBtn').click(function() {
+                const wsData = [
+                    ['RFID Tag', 'First Name', 'Last Name', 'Role', 'Status', 'Course Section'],
+                    ['RFID001', 'John', 'Doe', 'Student', 'Active', 'BSIT-1A'],
+                    ['RFID002', 'Jane', 'Smith', 'Faculty', 'Active', ''],
+                    ['RFID003', 'Mike', 'Johnson', 'Cleaning', 'Active', ''],
+                    ['RFID004', 'Sarah', 'Williams', 'Security', 'Active', ''],
+                    ['RFID005', 'Admin', 'User', 'Admin', 'Active', '']
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Users_Template');
+                XLSX.writeFile(wb, 'user_import_template.xlsx');
+            });
+            
+            $('#excelFile').change(function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                        processExcelData(jsonData);
+                    } catch (error) {
+                        Swal.fire('Error', 'Failed to read Excel file: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+            
+            function processExcelData(data) {
+                let startRow = $('#skipFirstRow').is(':checked') ? 1 : 0;
+                importedData = [];
+                const previewData = [];
+                const validRoles = ['Student', 'Faculty', 'Admin', 'Cleaning', 'Security'];
+                const validStatus = ['Active', 'Inactive'];
+                
+                for (let i = startRow; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length < 4) continue;
+                    
+                    const rfid = String(row[0] || '').trim();
+                    const fname = String(row[1] || '').trim();
+                    const lname = String(row[2] || '').trim();
+                    const role = String(row[3] || '').trim();
+                    const status = String(row[4] || 'Active').trim();
+                    const courseSection = String(row[5] || '').trim();
+                    
+                    const errors = [];
+                    if (!rfid) errors.push('RFID required');
+                    if (!fname) errors.push('First name required');
+                    if (!lname) errors.push('Last name required');
+                    if (!role) errors.push('Role required');
+                    if (!validRoles.includes(role)) errors.push(`Invalid role: ${role}`);
+                    if (status && !validStatus.includes(status)) errors.push(`Invalid status: ${status}`);
+                    if (role === 'Student' && !courseSection) errors.push('Course section required for students');
+                    
+                    const isValid = errors.length === 0;
+                    
+                    importedData.push({
+                        rfid_tag: rfid, f_name: fname, l_name: lname,
+                        role: role, status: status, course_section: courseSection,
+                        isValid: isValid, errors: errors
+                    });
+                    
+                    previewData.push({
+                        row_num: i + 1, rfid: rfid || '<empty>', fname: fname || '<empty>',
+                        lname: lname || '<empty>', role: role || '<empty>', status: status,
+                        course: courseSection || 'N/A', isValid: isValid, errors: errors
+                    });
+                }
+                
+                displayPreview(previewData);
+                const validCount = previewData.filter(r => r.isValid).length;
+                $('#processImportBtn').prop('disabled', validCount === 0);
+            }
+            
+            function displayPreview(previewData) {
+                $('#previewCount').text(`${previewData.length} rows`);
+                let html = '';
+                previewData.forEach(row => {
+                    html += `<tr class="${row.isValid ? 'valid-row' : 'invalid-row'}">
+                        <td>${row.row_num}</td>
+                        <td>${escapeHtml(row.rfid)}</td>
+                        <td>${escapeHtml(row.fname)}</td>
+                        <td>${escapeHtml(row.lname)}</td>
+                        <td>${escapeHtml(row.role)}</td>
+                        <td>${escapeHtml(row.status)}</td>
+                        <td>${escapeHtml(row.course)}</td>
+                        <td>${row.isValid ? '<span class="badge bg-success">✓ Valid</span>' : '<span class="badge bg-danger">✗ Invalid</span>'}</td>
+                        <td>${row.errors.length > 0 ? `<ul class="error-list">${row.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<span class="text-success">No errors</span>'}</td>
+                    </tr>`;
+                });
+                $('#previewBody').html(html);
+                
+                const validCount = previewData.filter(r => r.isValid).length;
+                const invalidCount = previewData.length - validCount;
+                $('#previewSummary').html(`
+                    <strong>Summary:</strong><br>
+                    ✅ Valid: ${validCount}<br>
+                    ❌ Invalid: ${invalidCount}<br>
+                    ${invalidCount > 0 ? '<span class="text-danger">⚠️ Please fix errors before importing</span>' : '<span class="text-success">✓ All rows are valid! Ready to import.</span>'}
+                `);
+                $('#importPreview').show();
+            }
+            
+            $('#processImportBtn').click(function() {
+                const validData = importedData.filter(item => item.isValid);
+                if (validData.length === 0) {
+                    Swal.fire('Error', 'No valid data to import', 'error');
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Confirm Import',
+                    text: `Are you sure you want to import ${validData.length} users?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    confirmButtonText: 'Yes, import now'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#importProgress').show();
+                        $('#importProgressBar').css('width', '30%').text('Preparing...');
+                        $('#progressStatus').text('Preparing data for import...');
+                        
+                        const formData = new FormData();
+                        formData.append('action', 'process_import');
+                        formData.append('csrf_token', $('#importCsrfToken').val());
+                        formData.append('import_data', JSON.stringify(validData));
+                        formData.append('update_existing', $('#updateExisting').is(':checked') ? '1' : '0');
+                        formData.append('auto_create_missing', $('#autoCreateMissing').is(':checked') ? '1' : '0');
+                        
+                        $('#importProgressBar').css('width', '60%').text('Importing...');
+                        $('#progressStatus').text('Importing to database, please wait...');
+                        
+                        $.ajax({
+                            url: 'users_api.php',
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            timeout: 120000,
+                            success: function(response) {
+                                $('#importProgress').hide();
+                                if (response.success) {
+                                    Swal.fire('Success', response.message, 'success').then(() => {
+                                        bootstrap.Modal.getInstance(document.getElementById('importExcelModal')).hide();
+                                        location.reload();
+                                    });
+                                } else {
+                                    let errorMsg = response.message;
+                                    if (response.error_details && response.error_details.length > 0) {
+                                        errorMsg += '\n\nErrors:\n' + response.error_details.slice(0, 10).join('\n');
+                                    }
+                                    Swal.fire('Warning', errorMsg, 'warning');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                $('#importProgress').hide();
+                                console.error('AJAX Error:', status, error);
+                                Swal.fire('Error', 'Import failed: ' + error, 'error');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+        
+        function editUser(user) {
+            $('#userModalLabel').text('Edit User');
+            $('#userId').val(user.User_id);
+            $('#rfidTag').val(user.Rfid_tag);
+            $('#firstName').val(user.F_name);
+            $('#lastName').val(user.L_name);
+            $('#role').val(user.Role);
+            $('#status').val(user.Status);
+            $('#courseSection').val(user.cs_id || '');
+            $('#courseSectionContainer').toggle(user.Role === 'Student');
+            new bootstrap.Modal(document.getElementById('userModal')).show();
         }
-
-        function toggleRole() {
-            const role = document.getElementById('m_role').value;
-            const isChecked = document.getElementById('is_irregular_checkbox').checked;
-            document.getElementById('m_course_container').style.display = (role === 'Student') ? 'block' : 'none';
-            document.getElementById('irregular_checkbox_container').style.display = (role === 'Student') ? 'block' : 'none';
-            document.getElementById('special_schedule_container').style.display = (role === 'Student' && isChecked) ? 'block' : 'none';
-        }
-
+        
         function deleteUser(id, fname, lname) {
             Swal.fire({
                 title: `Delete ${fname} ${lname}?`,
-                text: "User must be Inactive.",
+                text: "User must be Inactive before deletion.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 confirmButtonText: 'Yes, delete it'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const f = document.createElement('form');
-                    f.method = 'POST';
-                    f.innerHTML = `<input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                   <input type="hidden" name="user_id" value="${id}">
-                                   <input type="hidden" name="delete_user" value="1">`;
-                    document.body.appendChild(f);
-                    f.submit();
+                    $('#loadingOverlay').show();
+                    $.ajax({
+                        url: 'users_api.php',
+                        type: 'POST',
+                        data: { action: 'delete_user', user_id: id, csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' },
+                        success: function(response) {
+                            $('#loadingOverlay').hide();
+                            if (response.success) {
+                                location.reload();
+                            } else {
+                                Swal.fire('Error', response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            $('#loadingOverlay').hide();
+                            Swal.fire('Error', 'Delete failed', 'error');
+                        }
+                    });
                 }
             });
         }
-
-        function applyFilters() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const course = document.getElementById('courseFilter').value;
-            const status = document.getElementById('statusFilter').value;
-            document.querySelectorAll('.user-row').forEach(row => {
-                const text = row.innerText.toLowerCase();
-                const rowCourse = row.getAttribute('data-course');
-                const rowStatus = row.getAttribute('data-status');
-                row.style.display = (text.includes(search) && (course === "" || rowCourse === course) && (status === "" || rowStatus === status)) ? "" : "none";
-            });
-        }
-
-        $(document).ready(function() {
-            $('#m_special_sched').select2({ theme: 'bootstrap-5', dropdownParent: $('#addEditModal'), width: '100%' });
-            $('#is_irregular_checkbox').on('change', toggleRole);
-            $('.filter-trigger, #searchInput').on('input change', applyFilters);
-
-            $('#saveUserBtn').on('click', function() {
-                const form = document.querySelector('#addEditModal form');
-                if(!form.checkValidity()) return form.reportValidity();
-                
-                const formData = new FormData(form);
-                formData.append('save_user', '1');
-                const saveBtn = $(this);
-                saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
-                
-                $.ajax({
-                    url: window.location.href, 
-                    type: 'POST', 
-                    data: formData, 
-                    processData: false, 
-                    contentType: false,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function(res) {
-                        const data = JSON.parse(res);
-                        if(data.status === 'success') {
-                            Swal.fire('Success', data.message, 'success').then(() => location.reload());
-                        } else {
-                            Swal.fire('Error', data.message, 'error');
-                            saveBtn.prop('disabled', false).html('Save Changes');
-                        }
-                    }
-                });
-            });
-        });
     </script>
     
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <script>Swal.fire({ icon: 'success', title: 'Success', text: '<?php echo $_SESSION['success_message']; ?>', timer: 2500, showConfirmButton: false });</script>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['error_message'])): ?>
-    <script>Swal.fire({ icon: 'warning', title: 'Warning', text: <?= json_encode($_SESSION['error_message']) ?>, showConfirmButton: true });</script>
-    <?php unset($_SESSION['error_message']); endif; ?>
-    <script>
-        setInterval(function() {
-            const modal = document.getElementById('addEditModal');
-            const rfidField = document.getElementById('m_rfid');
-            const statusBadge = document.getElementById('scannerStatus');
-
-            if (modal && modal.classList.contains('show')) {
-                // Use a special flag to check connection without consuming a scan
-                fetch('rfid.php?get_last_scan=1')
-                .then(response => {
-                    if (!response.ok) throw new Error();
-                    
-                    // Connection is OK - Update Status
-                    statusBadge.classList.replace('bg-secondary', 'bg-success');
-                    statusBadge.classList.replace('bg-danger', 'bg-success');
-                    statusBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Scanner Online';
-
-                    return response.text();
-                })
-                .then(data => {
-                    const cleanData = data.trim();
-                    
-                    if (cleanData !== "" && !cleanData.includes("<html") && cleanData !== rfidField.value) {
-                        rfidField.value = cleanData;
-                        
-                        // Visual feedback for successful scan
-                        rfidField.style.backgroundColor = "#d4edda";
-                        rfidField.style.transition = "background-color 0.5s";
-                        setTimeout(() => { rfidField.style.backgroundColor = ""; }, 500);
-                    }
-                })
-                .catch(err => {
-                    // Connection Failed - Update Status
-                    statusBadge.classList.replace('bg-success', 'bg-danger');
-                    statusBadge.classList.replace('bg-secondary', 'bg-danger');
-                    statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Scanner Offline';
-                });
-            }
-        }, 1000);
-
-        // Add this inside your script tag
-        document.getElementById('m_rfid').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // This stops the page from refreshing
-                console.log("Enter key blocked to prevent refresh");
-                return false;
-            }
-        });
-        document.getElementById('saveUserBtn').addEventListener('click', function() {
-            const form = document.querySelector('#addEditModal form');
-            
-            // Check if form is valid (required fields)
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const formData = new FormData(form);
-            formData.append('save_user', '1');
-
-            // Show loading state on button
-            const btn = this;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    bootstrap.Modal.getInstance(document.getElementById('addEditModal')).hide();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: data.message,
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload(); // Reload to refresh the table with new data
-                    });
-                } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            });
-        });
-    </script>
 </body>
 </html>

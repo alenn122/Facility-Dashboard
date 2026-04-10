@@ -1,92 +1,93 @@
 <?php
 date_default_timezone_set('Asia/Manila');
-// CONFIGURATION
+
+// 1. CONFIGURATION
 $db_host = "localhost";
 $db_user = "root";
 $db_pass = "";
 $db_name = "facility-dashboard";
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// --- FETCH GLOBAL SETTINGS ---
+$global_settings = [];
+$get_globals = $conn->query("SELECT * FROM system_settings");
+if($get_globals) {
+    while($s_row = $get_globals->fetch_assoc()){
+        $global_settings[$s_row['setting_key']] = $s_row['setting_value'];
+    }
+}
+
 // --------------------------------------------------------------------
-// 2. THE "HEARTBEAT" (Receive Ping from ESP32) 
-// --------------------------------------------------------------------
-// --------------------------------------------------------------------
-// 2. THE "HEARTBEAT" (Receive Ping from ESP32) 
+// 2. THE DYNAMIC HEARTBEAT (Ping from ESP32)
 // --------------------------------------------------------------------
 if (isset($_POST['ping'])) {
     $mac = $_POST['mac'];
     $conn->query("UPDATE devices SET last_seen = NOW(), status = 'Online' WHERE mac_address = '$mac'");
     
-    $res = $conn->query("SELECT d.room_id, c.Status FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
+    $res = $conn->query("SELECT d.room_id, d.device_type, c.Status, c.grace_period FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
     
     if ($res && $res->num_rows > 0) {
         $row = $res->fetch_assoc();
         $rid = $row['room_id'];
+        $dtype = strtoupper($row['device_type']);
 
         if ($row['Status'] == 'Occupied') {
-            // --- NEW: ADMIN OVERRIDE CHECK ---
-            // Find the role of the last person who entered this room
-            $last_user_query = $conn->query("SELECT u.Role FROM access_log l 
-                                             JOIN users u ON l.User_id = u.User_id 
-                                             WHERE l.Room_id = '$rid' AND l.Status = 'granted' AND l.Access_type = 'Entry' 
-                                             ORDER BY l.Access_time DESC LIMIT 1");
+            // Check if an Admin/Faculty is inside (Shutdown Override)
+            $last_user_query = $conn->query("SELECT u.Role FROM access_log l JOIN users u ON l.User_id = u.User_id WHERE l.Room_id = '$rid' AND l.Status = 'granted' AND l.Access_type = 'Entry' ORDER BY l.Access_time DESC LIMIT 1");
             
             if ($last_user_query && $last_user_query->num_rows > 0) {
-                $last_user = $last_user_query->fetch_assoc();
-                // If an Admin is inside, ignore the schedule and stay ON
-                if ($last_user['Role'] == 'Admin') {
-                    echo "PONG";
-                    exit();
+                $u_role = $last_user_query->fetch_assoc()['Role'];
+                // Check policy table to see if this role keeps power on
+                $policy = $conn->query("SELECT can_override_shutdown FROM access_policies WHERE role = '$u_role' AND (device_type = '$dtype' OR device_type = '*') LIMIT 1")->fetch_assoc();
+
+                if ($policy && $policy['can_override_shutdown'] == 1) {
+                    echo "PONG"; exit();
                 }
             }
-            // --- END ADMIN OVERRIDE ---
 
-            $day = date('D'); 
-            $time = date('H:i:s');
-            
+            // --- HIERARCHICAL GRACE PERIOD LOGIC ---
+            $day = date('D'); $time = date('H:i:s');
             $sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time LIMIT 1");
 
-            if ($sched->num_rows > 0) {
-                $s = $sched->fetch_assoc();
-                $seconds_left = strtotime($s['End_time']) - strtotime($time);
+            if ($sched->num_rows == 0) {
+                // Schedule ended, find the last session to calculate grace
+                $last_sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND End_time <= '$time' ORDER BY End_time DESC LIMIT 1")->fetch_assoc();
+                
+                // Use Room Specific (if > 0) else fallback to Global
+                $active_grace = ($row['grace_period'] > 0) ? $row['grace_period'] : ($global_settings['global_grace_period'] ?? 15);
+                $seconds_since_end = time() - strtotime($last_sched['End_time']);
 
-                if ($seconds_left > 0 && $seconds_left <= 300) {
-                    echo "WARNING_5MIN";
-                    exit();
+                if ($seconds_since_end < ($active_grace * 60)) {
+                    // Check for 1-minute warning for extension
+                    if ($seconds_since_end >= (($active_grace * 60) - 60)) { echo "WARNING_EXTEND"; exit(); }
+                    echo "PONG"; exit();
+                } else {
+                    $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$rid'");
+                    echo "FORCE_OFF"; exit();
                 }
-            } else {
-                $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$rid'");
-                echo "FORCE_OFF"; 
-                exit();
             }
         }
     }
-    echo "PONG";
-    exit();
+    echo "PONG"; exit();
 }
 
-// 1. RECEIVE DATA
-$mac  = isset($_POST['mac']) ? $_POST['mac'] : ''; 
-$rfid = isset($_POST['rfid']) ? $_POST['rfid'] : '';
+// --------------------------------------------------------------------
+// 3. ACCESS REQUEST (RFID TAP)
+// --------------------------------------------------------------------
+$mac = $_POST['mac'] ?? ''; 
+$rfid = $_POST['rfid'] ?? '';
 
-// 2. DEVICE & ROOM LOOKUP
-$device_sql = "SELECT d.room_id, d.device_type FROM devices d WHERE d.mac_address = '$mac' LIMIT 1";
-$device_query = $conn->query($device_sql);
+// LOOKUP ROOM & DEVICE (Including custom logic toggles)
+$dev_res = $conn->query("SELECT d.room_id, d.device_type, c.double_tap_exit, c.allow_extension FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
+if (!$dev_res || $dev_res->num_rows == 0) { echo "UNKNOWN_DEVICE"; exit(); }
+$device = $dev_res->fetch_assoc();
 
-// Fix: Check if a device exists BEFORE trying to fetch the array
-if ($device_query && $device_query->num_rows > 0) {
-    $device = $device_query->fetch_assoc();
-    $room_id = $device['room_id'];
-    $device_type = strtoupper($device['device_type']);
-} else {
-    echo "UNKNOWN DEVICE"; 
-    exit();
-}
+$room_id = $device['room_id'];
+$device_type = strtoupper($device['device_type']);
 
-// 3. USER LOOKUP
+// USER LOOKUP
 $user_query = $conn->query("SELECT * FROM users WHERE Rfid_tag='$rfid' AND Status='Active'");
 if ($user_query->num_rows == 0) {
     echo "DENIED"; 
@@ -95,60 +96,43 @@ if ($user_query->num_rows == 0) {
 }
 $user = $user_query->fetch_assoc();
 $user_id = $user['User_id'];
+$u_role = $user['Role'];
 
-// 4. SMART ENTRY/EXIT TOGGLE
-$last_granted_query = $conn->query("SELECT Access_type FROM access_log 
-                                    WHERE User_id = '$user_id' AND Room_id = '$room_id' AND Status = 'granted'
-                                    ORDER BY Access_time DESC LIMIT 1");
+// SMART ENTRY/EXIT TOGGLE
+$last_log = $conn->query("SELECT Access_type, Access_time FROM access_log WHERE User_id = '$user_id' AND Room_id = '$room_id' AND Status = 'granted' ORDER BY Access_time DESC LIMIT 1")->fetch_assoc();
+$access_type = ($last_log && $last_log['Access_type'] == 'Entry') ? 'Exit' : 'Entry';
 
-$access_type = 'Entry'; 
-if ($last_granted_query->num_rows > 0) {
-    $last_granted = $last_granted_query->fetch_assoc();
-    if ($last_granted['Access_type'] == 'Entry') {
-        $access_type = 'Exit';
-    }
-}
-
-// 5. PERMISSION CHECK
-$is_authorized = false;
-$sched_id = "NULL";
-
-if ($user['Role'] == 'Admin') {
-    // Admins (Maintenance/IT) have access to EVERYTHING at ANY TIME
-    $is_authorized = true;
-} 
-else if ($user['Role'] == 'Faculty') {
-    // Faculty must follow the schedule for BOTH Door and Power
-    $schedule = check_schedule($user_id, $room_id, $user['CourseSection_id']);
-    if ($schedule) {
-        $is_authorized = true;
-        $sched_id = $schedule['Schedule_id'];
-    }
-} 
-else if ($user['Role'] == 'Student') {
-    // Students ONLY get access if the device is a DOOR and they have a schedule
-    if ($device_type == 'DOOR') {
-        $schedule = check_schedule($user_id, $room_id, $user['CourseSection_id']);
-        if ($schedule) {
-            $is_authorized = true;
-            $sched_id = $schedule['Schedule_id'];
-        }
-    } else {
-        // Students are NEVER authorized for 'POWER' devices
-        $is_authorized = false;
-    }
-}
-
-// 6. EXECUTE ACCESS & UPDATE ROOM STATUS
-if ($is_authorized) {
-    log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted', $device_type);
+// --- INTENT DISAMBIGUATION (Double-Tap vs Extension) ---
+if ($access_type == 'Exit' && $u_role == 'Faculty') {
+    $time_since_tap = time() - strtotime($last_log['Access_time']);
     
-    if ($device_type == 'DOOR') {
-        // Only open the door, don't touch the room status/power here 
-        // unless you want the first person in to trigger the lights
-        echo "POWER_ON"; 
-    } 
-    else if ($device_type == 'POWER') {
+    // Use Room-specific setting if customized, otherwise use Global Default
+    $dtap_enabled = ($device['double_tap_exit'] == 1) ? true : (($global_settings['global_double_tap'] ?? 1) == 1);
+    
+    // Double-tap (less than 5 seconds) forces an EXIT during a warning/grace period
+    if ($dtap_enabled && $time_since_tap < 5) {
+        $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
+        echo "POWER_OFF";
+        log_access($user_id, $rfid, $room_id, null, 'Exit', 'granted', $device_type);
+        exit();
+    }
+}
+
+// --- PERMISSION CHECK (Policy Table) ---
+$policy = $conn->query("SELECT * FROM access_policies WHERE role = '$u_role' AND (device_type = '$device_type' OR device_type = '*') LIMIT 1")->fetch_assoc();
+$is_auth = false; $sched_id = "NULL";
+
+if ($policy) {
+    if ($policy['requires_schedule'] == 1) {
+        $sched = check_schedule($user_id, $room_id, $user['CourseSection_id']);
+        if ($sched) { $is_auth = true; $sched_id = $sched['Schedule_id']; }
+    } else { $is_auth = true; }
+}
+
+// 6. EXECUTE ACCESS
+if ($is_auth) {
+    log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted', $device_type);
+    if ($device_type == 'POWER') {
         if ($access_type == 'Entry') {
             $conn->query("UPDATE classrooms SET Status = 'Occupied' WHERE Room_id = '$room_id'");
             echo "POWER_ON";
@@ -156,7 +140,7 @@ if ($is_authorized) {
             $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
             echo "POWER_OFF";
         }
-    }
+    } else { echo "GRANTED"; }
 } else {
     echo "DENIED";
     log_access($user_id, $rfid, $room_id, null, $access_type, 'denied', $device_type);
@@ -165,65 +149,29 @@ if ($is_authorized) {
 // --- FUNCTIONS ---
 
 function check_schedule($user_id, $room_id, $course_section_id) {
-    global $conn;
-    $day = date('D'); 
-    $time = date('H:i:s');
-
-    // 1. Check if the user is the FACULTY assigned to this room right now
-    $faculty_sql = "SELECT Schedule_id FROM schedule 
-                    WHERE Room_id = '$room_id' 
-                    AND Faculty_id = '$user_id' 
-                    AND Day = '$day'
-                    AND '$time' BETWEEN Start_time AND End_time LIMIT 1";
+    global $conn; $day = date('D'); $time = date('H:i:s');
     
-    $faculty_res = $conn->query($faculty_sql);
-    if ($faculty_res && $faculty_res->num_rows > 0) {
-        return $faculty_res->fetch_assoc();
-    }
+    // 1. Faculty Check
+    $faculty_res = $conn->query("SELECT Schedule_id FROM schedule WHERE Room_id = '$room_id' AND Faculty_id = '$user_id' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time LIMIT 1");
+    if ($faculty_res && $faculty_res->num_rows > 0) return $faculty_res->fetch_assoc();
 
-    // 2. [NEW] Check for INDIVIDUAL PERMISSION (Irregular / Working Students)
-    // This looks at the bridge table we created to see if an admin gave this specific user a "pass"
-    $special_sql = "SELECT s.Schedule_id FROM schedule s
-                    JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id
-                    WHERE s.Room_id = '$room_id' 
-                    AND ip.User_id = '$user_id' 
-                    AND s.Day = '$day'
-                    AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
-    
-    $special_res = $conn->query($special_sql);
-    if ($special_res && $special_res->num_rows > 0) {
-        return $special_res->fetch_assoc(); // Access Granted via Special Permission
-    }
+    // 2. Individual Permission Check
+    $special_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id WHERE s.Room_id = '$room_id' AND ip.User_id = '$user_id' AND s.Day = '$day' AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1");
+    if ($special_res && $special_res->num_rows > 0) return $special_res->fetch_assoc();
 
-    // 3. [EXISTING] Check if it's a REGULAR STUDENT assigned via CourseSection
+    // 3. Regular Student Check
     if (!empty($course_section_id) && $course_section_id !== "NULL") {
-        $student_sql = "SELECT s.Schedule_id FROM schedule s
-                        JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
-                        WHERE s.Room_id = '$room_id' 
-                        AND s.Day = '$day'
-                        AND sa.CourseSection_id = '$course_section_id'
-                        AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1";
-        $student_res = $conn->query($student_sql);
+        $student_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id WHERE s.Room_id = '$room_id' AND s.Day = '$day' AND sa.CourseSection_id = '$course_section_id' AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1");
         return ($student_res && $student_res->num_rows > 0) ? $student_res->fetch_assoc() : false;
     }
-
     return false;
 }
 
-// Update the function definition to include $dt (Device Type)
 function log_access($u, $r, $rm, $s, $t, $st, $dt = null) {
     global $conn;
-
-    $u_safe = (!empty($u) && $u !== "NULL") ? "'$u'" : "NULL";
-    $s_safe = (!empty($s) && $s !== "NULL") ? "'$s'" : "NULL";
-    // Sanitize the device type
-    $dt_safe = !empty($dt) ? "'$dt'" : "NULL";
-
-    // Update the INSERT statement to include device_type
-    $sql = "INSERT INTO access_log (User_id, Rfid_tag, Room_id, Schedule_id, Access_time, Access_type, device_type, Status) 
-            VALUES ($u_safe, '$r', '$rm', $s_safe, NOW(), '$t', $dt_safe, '$st')";
-
-    if (!$conn->query($sql)) {
-        echo "LOGGING ERROR: " . $conn->error;
-    }
+    $u_safe = ($u && $u !== "NULL") ? "'$u'" : "NULL";
+    $s_safe = ($s && $s !== "NULL") ? "'$s'" : "NULL";
+    $dt_safe = $dt ? "'$dt'" : "NULL";
+    $conn->query("INSERT INTO access_log (User_id, Rfid_tag, Room_id, Schedule_id, Access_time, Access_type, device_type, Status) VALUES ($u_safe, '$r', '$rm', $s_safe, NOW(), '$t', $dt_safe, '$st')");
 }
+?>

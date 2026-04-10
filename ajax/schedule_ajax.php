@@ -257,29 +257,45 @@ function saveSchedule($conn) {
 function deleteSchedule($conn) {
     $id = intval($_POST['schedule_id'] ?? 0);
     
-    // 1. Get Room ID before archiving so we know which room to check
-    $room_info = $conn->query("SELECT Room_id FROM schedule WHERE Schedule_id = $id")->fetch_assoc();
-    $room_id = $room_info['Room_id'];
+    // 1. Get Room ID before archiving
+    $room_res = $conn->query("SELECT Room_id FROM schedule WHERE Schedule_id = $id");
+    if (!$room_res || $room_res->num_rows == 0) {
+        echo json_encode(['success' => false, 'message' => 'Schedule not found.']);
+        return;
+    }
+    $room_id = $room_res->fetch_assoc()['Room_id'];
 
-    // 2. Archive the schedule
+    // 2. Perform the Soft Delete (Archive)
     $stmt = $conn->prepare("UPDATE schedule SET is_deleted = 1 WHERE Schedule_id = ?");
     $stmt->bind_param('i', $id);
     
     if ($stmt->execute()) {
-        // 3. AUTO-OFF LOGIC:
-        // Check if there are any OTHER active schedules in this room right now
-        $day = date('D'); $time = date('H:i:s');
-        $active_check = $conn->query("SELECT Schedule_id FROM schedule WHERE Room_id = '$room_id' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time AND is_deleted = 0");
+        // 3. Check if any OTHER schedules are active in this room
+        $day = date('D'); 
+        $time = date('H:i:s');
+        $active_check = $conn->query("SELECT Schedule_id FROM schedule 
+                                    WHERE Room_id = '$room_id' 
+                                    AND Day = '$day' 
+                                    AND '$time' BETWEEN Start_time AND End_time 
+                                    AND is_deleted = 0");
 
         if ($active_check->num_rows == 0) {
-            // No other schedules are running. Update classroom to Unoccupied.
-            // On the next ping, the ESP32 will see 'Unoccupied' and turn off the relay.
-            $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
+            // No other classes are running. 
+            // Set a 1-minute delay before power off.
+            $shutdown_time = date('Y-m-d H:i:s', strtotime('+1 minute'));
+            $conn->query("UPDATE classrooms SET 
+                          Status = 'Pending Shutdown', 
+                          shutdown_at = '$shutdown_time' 
+                          WHERE Room_id = '$room_id'");
         }
 
-        echo json_encode(['success' => true, 'message' => 'Schedule archived. Power will adjust automatically.']);
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Schedule archived. Room power will shut down in 60 seconds.'
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Archive failed.']);
     }
-    // ... error handling ...
-}c:\Users\Admin\Downloads\facility-dashboard (8).sql
+}
 
 ?>

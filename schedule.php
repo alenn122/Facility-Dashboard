@@ -138,6 +138,11 @@ header("Expires: 0");
                 </button>
             </div>
             <div class="col-md-6 col-lg-2">
+                <button class="main-btn w-100" id="viewArchiveBtn">
+                        <i class="fas fa-archive me-1"></i> View Archive
+                </button>
+            </div>
+            <div class="col-md-6 col-lg-2">
                 <button class="main-btn w-100 excel-btn" id="importExcelBtn">
                     <i class="fas fa-file-excel me-1"></i> Import Excel
                 </button>
@@ -379,6 +384,32 @@ header("Expires: 0");
                     <button type="button" class="btn btn-success" id="processImportBtn" disabled>
                         <i class="fas fa-upload me-1"></i> Import
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="archiveModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Archived Schedules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Subject</th>
+                                    <th>Faculty</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="archiveTableBody">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

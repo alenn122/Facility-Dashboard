@@ -41,7 +41,34 @@ switch ($action) {
     case 'delete_schedule':
         deleteSchedule($conn);
         break;
+
+    case 'restore_schedule':
+    $id = intval($_POST['schedule_id'] ?? 0);
+    $stmt = $conn->prepare("UPDATE schedule SET is_deleted = 0 WHERE Schedule_id = ?");
+    $stmt->bind_param('i', $id);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Schedule restored!']);
+    }
+    $stmt->close();
+    break;
     
+    case 'get_archived_schedules':
+    $sql = "SELECT s.Schedule_id, sub.Code, sub.Description, s.Day, 
+                   r.Room_code, CONCAT(u.F_name, ' ', u.L_name) as Faculty_name
+            FROM schedule s
+            INNER JOIN subject sub ON s.Subject_id = sub.Subject_id
+            INNER JOIN classrooms r ON s.Room_id = r.Room_id
+            INNER JOIN users u ON s.Faculty_id = u.User_id
+            WHERE s.is_deleted = 1"; // Only archived items
+    
+    $result = $conn->query($sql);
+    $archived = [];
+    while($row = $result->fetch_assoc()) {
+        $archived[] = $row;
+    }
+    echo json_encode(['success' => true, 'archived' => $archived]);
+    break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action specified']);
         break;
@@ -87,7 +114,7 @@ function getSchedules($conn) {
             INNER JOIN users u ON s.Faculty_id = u.User_id
             LEFT JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id
             LEFT JOIN course_section cs ON sa.CourseSection_id = cs.CourseSection_id
-            WHERE 1=1";
+            WHERE s.is_deleted = 0";
 
     $params = [];
     $types = '';
@@ -230,29 +257,29 @@ function saveSchedule($conn) {
 function deleteSchedule($conn) {
     $id = intval($_POST['schedule_id'] ?? 0);
     
-    if (!$id) {
-        echo json_encode(['success' => false, 'message' => 'Invalid schedule ID']);
-        return;
-    }
+    // 1. Get Room ID before archiving so we know which room to check
+    $room_info = $conn->query("SELECT Room_id FROM schedule WHERE Schedule_id = $id")->fetch_assoc();
+    $room_id = $room_info['Room_id'];
+
+    // 2. Archive the schedule
+    $stmt = $conn->prepare("UPDATE schedule SET is_deleted = 1 WHERE Schedule_id = ?");
+    $stmt->bind_param('i', $id);
     
-    $conn->begin_transaction();
-    try {
-        $stmt = $conn->prepare("DELETE FROM schedule_access WHERE Schedule_id=?");
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $stmt->close();
-        
-        $stmt = $conn->prepare("DELETE FROM schedule WHERE Schedule_id=?");
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $stmt->close();
-        
-        $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Schedule deleted successfully!']);
-        
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    if ($stmt->execute()) {
+        // 3. AUTO-OFF LOGIC:
+        // Check if there are any OTHER active schedules in this room right now
+        $day = date('D'); $time = date('H:i:s');
+        $active_check = $conn->query("SELECT Schedule_id FROM schedule WHERE Room_id = '$room_id' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time AND is_deleted = 0");
+
+        if ($active_check->num_rows == 0) {
+            // No other schedules are running. Update classroom to Unoccupied.
+            // On the next ping, the ESP32 will see 'Unoccupied' and turn off the relay.
+            $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Schedule archived. Power will adjust automatically.']);
     }
-}
+    // ... error handling ...
+}c:\Users\Admin\Downloads\facility-dashboard (8).sql
+
 ?>

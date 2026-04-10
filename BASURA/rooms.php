@@ -64,36 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: devices.php");
         exit();
     }
-    // --- UPDATE ROOM LOGIC ---
-    if (isset($_POST['update_logic'])) {
-        $roomId = $_POST['room_id'];
-        $grace = intval($_POST['grace_period']);
-        $ext = isset($_POST['allow_extension']) ? 1 : 0;
-        $dtap = isset($_POST['double_tap_exit']) ? 1 : 0;
-
-        $stmt = $conn->prepare("UPDATE classrooms SET grace_period = ?, allow_extension = ?, double_tap_exit = ? WHERE Room_id = ?");
-        $stmt->bind_param("iiii", $grace, $ext, $dtap, $roomId);
-        
-        if($stmt->execute()) {
-            $_SESSION['success_message'] = "Logic policies updated!";
-        }
-        header("Location: rooms.php");
-        exit();
-    }
-    // --- UPDATE GLOBAL LOGIC ---
-    if (isset($_POST['update_global_logic'])) {
-        $grace = $_POST['global_grace'];
-        $ext = isset($_POST['global_ext']) ? '1' : '0';
-        $dtap = isset($_POST['global_dtap']) ? '1' : '0';
-
-        $conn->query("UPDATE system_settings SET setting_value = '$grace' WHERE setting_key = 'global_grace_period'");
-        $conn->query("UPDATE system_settings SET setting_value = '$ext' WHERE setting_key = 'global_allow_extension'");
-        $conn->query("UPDATE system_settings SET setting_value = '$dtap' WHERE setting_key = 'global_double_tap'");
-
-        $_SESSION['success_message'] = "Global policies updated!";
-        header("Location: rooms.php");
-        exit();
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -147,15 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </li>
             </ul>
-             <div class="ms-md-auto d-flex gap-2">
-                <button class="btn btn-outline-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#globalLogicModal">
-                    <i class="fas fa-globe me-1"></i> Global Logic
-                </button>
-                
-                <button class="main-btn" data-bs-toggle="modal" data-bs-target="#addRoomModal">
-                    <i class="fas fa-plus"></i> Add New Room
-                </button>
-            </div>
+
+            <button class="main-btn ms-md-auto" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+                <i class="fas fa-plus"></i> Add New Room
+            </button>
         </div>
 
         <div class="tab-content">
@@ -178,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             endforeach; ?>
         </div>
     </div>
-            
+
     <div class="modal fade" id="addRoomModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" class="modal-content">
@@ -245,15 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 card.style.display = name.includes(term) ? "" : "none";
             });
         });
-        function openLogicModal(id, code, grace, ext, dtap) {
-            document.getElementById('logic_room_id').value = id;
-            document.getElementById('logicModalTitle').innerText = `Logic Config: ${code}`;
-            document.getElementById('logic_grace').value = grace;
-            document.getElementById('logic_ext').checked = (ext == 1);
-            document.getElementById('logic_dtap').checked = (dtap == 1);
-            
-            new bootstrap.Modal(document.getElementById('logicModal')).show();
-        }
 
         // Delete Logic (using SweetAlert2)
         function confirmDeleteRoom(id, name) {
@@ -297,15 +253,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 filteredRooms.forEach(room => {
                                     const statusClass = room.Status.toLowerCase() === 'occupied' ? 'occupied' : 'unoccupied';
                                     const badgeClass = room.Status.toLowerCase() === 'occupied' ? 'bg-danger' : 'bg-success';
-                                    const graceValue = parseInt(room.grace_period) || 0;
-                                    const isCustom = graceValue > 0;
-
-                                    // This single variable will handle the text and the "Global" tag
-                                    const displayGrace = isCustom ? `${graceValue} mins (Custom)` : `15 mins (Global)`;
-                                    // This picks the icon: Globe for global, Sliders for custom
-                                    const displayIcon = isCustom ? 'fa-sliders-h' : 'fa-globe';
-                                    const textColor = isCustom ? 'text-primary' : 'text-muted';
-                                    // Replace the button section inside your loop with this:
                                     html += `
                                         <div class="col-lg-6 room-item-card" data-room-name="${room.Room_code.toUpperCase()}">
                                             <div class="room-card ${statusClass}">
@@ -313,27 +260,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <h5>${room.Room_code}</h5>
                                                     <span class="badge ${badgeClass}">${room.Status}</span>
                                                 </div>
-                                                
-                                                <div class="room-card-header mb-2">
+                                                <div class="room-card-header">
                                                     <h5 style="padding: 5px 5px; color: white; background-color: #007bff; border-radius: 5px; font-size: 18px;">${room.FLOOR}</h5>
                                                 </div>
-
-                                                <p class="mb-2">
+                                                <p class="mb-3">
                                                     <i class="fas fa-school"></i> Type: ${room.Classroom_type}
                                                 </p>
-
-                                                <p class="mb-3 ${textColor} fw-bold" style="font-size: 0.9rem;">
-                                                    <i class="fas ${displayIcon} me-1"></i> Grace: ${displayGrace}
-                                                </p>
-
-                                                <div class="d-flex gap-2">
-                                                    <button class="btn btn-primary btn-sm" onclick="openLogicModal(${room.Room_id}, '${room.Room_code}', ${graceValue}, ${room.allow_extension}, ${room.double_tap_exit})">
-                                                        <i class="fas fa-cog"></i> Logic
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom(${room.Room_id}, '${room.Room_code}')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
+                                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteRoom(${room.Room_id}, '${room.Room_code}')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
                                             </div>
                                         </div>
                                     `;
@@ -385,87 +320,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             showConfirmButton: true
         });
     });
-    
-
     </script>
     <?php unset($_SESSION['error_message']); endif; ?>
 
     <!-- JAVASCRIPT -->
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
-
-    <div class="modal fade" id="logicModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="POST" class="modal-content">
-                <div class="modal-header">
-                    <h5 class="fw-bold" id="logicModalTitle">Room Logic Settings</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="update_logic" value="1">
-                    <input type="hidden" name="room_id" id="logic_room_id">
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Grace Period (Minutes)</label>
-                        <input type="number" name="grace_period" id="logic_grace" class="form-control" min="0" max="60">
-                        <small class="text-muted">How long power stays on after schedule ends.</small>
-                    </div>
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" name="allow_extension" id="logic_ext">
-                        <label class="form-check-label fw-bold">Allow Tap-to-Extend</label>
-                        <br><small class="text-muted">Faculty can tap during the last minute to add 15 mins.</small>
-                    </div>
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" name="double_tap_exit" id="logic_dtap">
-                        <label class="form-check-label fw-bold">Enable Double-Tap Exit</label>
-                        <br><small class="text-muted">Distinguishes between "Extend" and "Exit" intents.</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Apply Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="modal fade" id="globalLogicModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="POST" class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="fw-bold mb-0"><i class="fas fa-university me-2"></i>Campus-Wide Default Logic</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="update_global_logic" value="1">
-                    
-                    <div class="alert alert-info py-2">
-                        <small><i class="fas fa-info-circle me-1"></i> These settings apply to all rooms unless a specific room override is set.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Default Grace Period (Mins)</label>
-                        <input type="number" name="global_grace" class="form-control" value="15" min="1">
-                    </div>
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" name="global_ext" checked>
-                        <label class="form-check-label fw-bold">Default: Allow Tap-to-Extend</label>
-                    </div>
-
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" name="global_dtap" checked>
-                        <label class="form-check-label fw-bold">Default: Double-Tap Exit</label>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="secondary-btn" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="main-btn">Update Defaults</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </body>
 
 </html>

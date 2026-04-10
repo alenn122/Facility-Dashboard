@@ -363,7 +363,11 @@ function createScheduleTable(courseName, schedules) {
                         <button class="btn btn-success btn-sm edit-btn me-1" data-id="${schedule.Schedule_id}" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm delete-btn" data-id="${schedule.Schedule_id}" title="Delete">
+                        
+                        <button class="btn btn-danger btn-sm delete-btn" 
+                                data-id="${schedule.Schedule_id}" 
+                                data-status="${schedule.Faculty_Status}" 
+                                title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -863,64 +867,104 @@ function saveSchedule() {
 // Delete schedule
 function deleteSchedule(scheduleId) {
     if (!scheduleId) return;
-    
+
+    // 1. Check for Active Faculty Status BEFORE showing the modal
+    const btn = document.querySelector(`.delete-btn[data-id="${scheduleId}"]`);
+    const facultyStatus = btn.getAttribute('data-status');
+
+    if (facultyStatus === 'Active') {
+        // Show a Yellow Warning Notification (Toast)
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: '#fff3cd', // Light yellow background
+            color: '#856404',      // Dark yellow text
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        Toast.fire({
+            icon: 'warning',
+            title: 'Restriction: Active Faculty',
+            text: 'This schedule cannot be deleted while the professor is active.'
+        });
+        
+        return; // EXIT - Don't show the confirmation modal
+    }
+
+    // 2. If NOT Active, proceed to the detailed confirmation modal
+    const row = btn.closest('tr');
+    const code = row.cells[0].innerText;
+    const desc = row.cells[1].innerText;
+
     Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: 'Archive Schedule?',
+        html: `
+            <div class="text-start border p-3 rounded bg-light">
+                <p class="mb-1"><strong>Subject:</strong> ${code} - ${desc}</p>
+            </div>
+            <p class="mt-3">Type <b>DELETE</b> to archive this schedule.</p>
+        `,
         icon: 'warning',
+        input: 'text',
+        inputPlaceholder: 'Type DELETE here',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: 'Archive',
+        preConfirm: (value) => {
+            if (value !== 'DELETE') {
+                Swal.showValidationMessage('Confirmation text incorrect');
+            }
+        }
     }).then((result) => {
         if (result.isConfirmed) {
-            Swal.fire({
-                title: 'Deleting...',
-                text: 'Please wait',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-            
-            const formData = new FormData();
-            formData.append('action', 'delete_schedule');
-            formData.append('schedule_id', scheduleId);
-            
-            fetch('ajax/schedule_ajax.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return parseJsonSafe(response);
-            })
-            .then(result => {
-                Swal.close();
-                
-                if (!result.ok) {
-                    Swal.fire('Server Error', 'Failed to delete schedule', 'error');
-                    return;
-                }
-                
-                const data = result.data;
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: data.message,
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => loadSchedules());
-                } else {
-                    Swal.fire('Error', data.message || 'Failed to delete schedule', 'error');
-                }
-            })
-            .catch(error => {
-                Swal.close();
-                console.error('Error deleting schedule:', error);
-                Swal.fire('Error', 'Failed to delete schedule: ' + error.message, 'error');
-            });
+            performDelete(scheduleId);
         }
+    });
+}
+
+function performDelete(scheduleId) {
+    const formData = new FormData();
+    formData.append('action', 'delete_schedule');
+    formData.append('schedule_id', scheduleId);
+
+    fetch('ajax/schedule_ajax.php', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Archived!',
+                text: data.message,
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Undo', // Undo Button
+                cancelButtonText: 'Dismiss',
+            }).then((choice) => {
+                if (choice.isConfirmed) {
+                    undoDeletion(scheduleId);
+                }
+            });
+            loadSchedules();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+
+function undoDeletion(scheduleId) {
+    const formData = new FormData();
+    formData.append('action', 'restore_schedule'); // You'll need to add this case in PHP
+    formData.append('schedule_id', scheduleId);
+
+    fetch('ajax/schedule_ajax.php', { method: 'POST', body: formData })
+    .then(() => {
+        Swal.fire('Restored!', 'The schedule is back.', 'success');
+        loadSchedules();
     });
 }
 
@@ -953,3 +997,33 @@ function showError(message) {
         </button>
     `;
 }
+
+document.getElementById('viewArchiveBtn').addEventListener('click', function() {
+    const archiveModal = new bootstrap.Modal(document.getElementById('archiveModal'));
+    
+    fetch('ajax/schedule_ajax.php?action=get_archived_schedules')
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('archiveTableBody');
+        tbody.innerHTML = '';
+        
+        if (data.archived.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No archived schedules.</td></tr>';
+        } else {
+            data.archived.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.Code}</td>
+                        <td>${item.Description}</td>
+                        <td>${item.Faculty_name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="undoDeletion(${item.Schedule_id})">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        archiveModal.show();
+    });
+});

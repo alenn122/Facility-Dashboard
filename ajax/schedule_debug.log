@@ -1,1 +1,55 @@
 [07-Mar-2026 07:20:33 Europe/Berlin] Uncaught exception: mysqli object is already closed
+[10-Apr-2026 04:27:43 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:27:50 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:27:58 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:28:23 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:28:51 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:29:20 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:30:02 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:31:09 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[10-Apr-2026 04:32:00 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'is_deleted' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:255
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(255): mysqli->prepare('UPDATE schedule...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255

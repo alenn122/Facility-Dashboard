@@ -53,3 +53,15 @@ Stack trace:
 #1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
 #2 {main}
   thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 255
+[11-Apr-2026 17:57:27 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'shutdown_at' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:286
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(286): mysqli->query('UPDATE classroo...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 286
+[11-Apr-2026 17:57:32 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'shutdown_at' in 'field list' in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php:286
+Stack trace:
+#0 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(286): mysqli->query('UPDATE classroo...')
+#1 C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php(42): deleteSchedule(Object(mysqli))
+#2 {main}
+  thrown in C:\xampp\htdocs\Facility-Dashboard\ajax\schedule_ajax.php on line 286

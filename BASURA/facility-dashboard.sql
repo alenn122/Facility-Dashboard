@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 28, 2026 at 08:20 AM
+-- Generation Time: Apr 10, 2026 at 11:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -35,6 +35,7 @@ CREATE TABLE `access_log` (
   `Schedule_id` int(11) DEFAULT NULL,
   `Access_time` datetime DEFAULT current_timestamp(),
   `Access_type` enum('Entry','Exit') NOT NULL,
+  `device_type` enum('DOOR','POWER') DEFAULT NULL,
   `Status` enum('granted','denied') DEFAULT 'denied'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -42,415 +43,590 @@ CREATE TABLE `access_log` (
 -- Dumping data for table `access_log`
 --
 
-INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_id`, `Access_time`, `Access_type`, `Status`) VALUES
-(1, NULL, '1,82 04 10 01', 1, NULL, '2025-10-09 15:38:44', 'Entry', 'denied'),
-(2, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:38:56', 'Entry', 'denied'),
-(3, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:38:59', 'Entry', 'denied'),
-(4, NULL, '1,82 04 10 01', 1, NULL, '2025-10-09 15:40:14', 'Entry', 'denied'),
-(5, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:40:19', 'Entry', 'denied'),
-(6, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:40:27', 'Entry', 'denied'),
-(7, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:45:18', 'Entry', 'denied'),
-(8, 1, '82 04 10 01', 1, 3, '2025-10-09 15:48:46', 'Entry', 'granted'),
-(9, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 15:49:41', 'Entry', 'denied'),
-(10, NULL, '2,D3 CB B1 38', 2, NULL, '2025-10-09 15:49:47', 'Entry', 'denied'),
-(11, NULL, '2,D3 CB B1 38', 2, NULL, '2025-10-09 15:49:51', 'Entry', 'denied'),
-(12, 1, '82 04 10 01', 1, 3, '2025-10-09 15:49:54', 'Entry', 'granted'),
-(13, 1, '82 04 10 01', 1, 3, '2025-10-09 15:50:13', 'Entry', 'granted'),
-(14, 1, '82 04 10 01', 1, 3, '2025-10-09 15:50:43', 'Entry', 'granted'),
-(15, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:02', 'Entry', 'denied'),
-(16, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:26', 'Exit', 'granted'),
-(17, 1, '82 04 10 01', 1, 3, '2025-10-09 15:51:33', 'Entry', 'granted'),
-(18, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:51:40', 'Exit', 'granted'),
-(19, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:05', 'Entry', 'denied'),
-(20, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:16', 'Entry', 'denied'),
-(21, 1, '82 04 10 01', 1, NULL, '2025-10-09 15:52:21', 'Entry', 'denied'),
-(22, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:53:03', 'Entry', 'denied'),
-(23, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 15:53:08', 'Entry', 'denied'),
-(24, 1, '82 04 10 01', 1, 3, '2025-10-09 15:53:13', 'Entry', 'granted'),
-(25, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:53:35', 'Exit', 'granted'),
-(26, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 15:53:37', 'Entry', 'granted'),
-(27, NULL, '2,A4 12 3D 05', 2, NULL, '2025-10-09 15:53:46', 'Entry', 'denied'),
-(28, NULL, '2,82 04 10 01', 2, NULL, '2025-10-09 16:13:01', 'Entry', 'denied'),
-(29, 1, '82 04 10 01', 1, 3, '2025-10-09 16:13:22', 'Entry', 'granted'),
-(30, 1, '82 04 10 01', 2, 3, '2025-10-09 16:14:30', 'Entry', 'granted'),
-(31, 1, '82 04 10 01', 1, 3, '2025-10-09 16:14:34', 'Entry', 'granted'),
-(32, 1, '82 04 10 01', 2, 3, '2025-10-09 16:15:53', 'Entry', 'granted'),
-(33, 8, 'A4 12 3D 05', 2, NULL, '2025-10-09 16:15:59', 'Exit', 'granted'),
-(34, 2, 'D3 CB B1 38', 2, NULL, '2025-10-09 16:16:03', 'Entry', 'denied'),
-(35, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:19:29', 'Entry', 'granted'),
-(36, 2, 'D3 CB B1 38', 1, 1, '2025-10-09 16:19:32', 'Entry', 'granted'),
-(37, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:40', 'Exit', 'granted'),
-(38, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:43', 'Entry', 'granted'),
-(39, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:22:51', 'Exit', 'granted'),
-(40, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:22:55', 'Entry', 'denied'),
-(41, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:23:00', 'Entry', 'granted'),
-(42, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:23:09', 'Entry', 'denied'),
-(43, 1, '82 04 10 01', 1, NULL, '2025-10-09 16:23:12', 'Entry', 'denied'),
-(44, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:23:46', 'Entry', 'granted'),
-(45, 8, 'A4 12 3D 05', 1, NULL, '2025-10-09 16:23:53', 'Exit', 'granted'),
-(46, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:23:57', 'Entry', 'denied'),
-(47, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:04', 'Entry', 'granted'),
-(48, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:20', 'Entry', 'granted'),
-(49, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:24:28', 'Entry', 'granted'),
-(50, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:24:50', 'Entry', 'denied'),
-(51, 1, '82 04 10 01', 1, 3, '2025-10-09 16:25:01', 'Entry', 'granted'),
-(52, 1, '82 04 10 01', 1, 3, '2025-10-09 16:26:30', 'Entry', 'granted'),
-(53, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:26:34', 'Entry', 'denied'),
-(54, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:28:41', 'Entry', 'denied'),
-(55, 1, '82 04 10 01', 2, NULL, '2025-10-09 16:28:43', 'Entry', 'denied'),
-(56, 1, '82 04 10 01', 1, 3, '2025-10-09 16:28:45', 'Entry', 'granted'),
-(57, 2, 'D3 CB B1 38', 2, 1, '2025-10-09 16:28:52', 'Entry', 'granted'),
-(58, 2, 'D3 CB B1 38', 1, NULL, '2025-10-09 16:28:55', 'Entry', 'denied'),
-(59, 2, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:28:40', 'Entry', 'denied'),
-(60, 2, 'D3 CB B1 38', 2, NULL, '2025-10-10 10:30:37', 'Entry', 'denied'),
-(61, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:30:41', 'Entry', 'denied'),
-(62, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:08', 'Entry', 'denied'),
-(63, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:11', 'Entry', 'denied'),
-(64, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:14', 'Entry', 'denied'),
-(65, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:20', 'Entry', 'denied'),
-(66, 1, '82 04 10 01', 1, NULL, '2025-10-10 10:39:23', 'Entry', 'denied'),
-(67, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:40:18', 'Entry', 'denied'),
-(68, 2, 'D3 CB B1 38', 1, 1, '2025-10-10 10:41:06', 'Entry', 'granted'),
-(69, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:11', 'Entry', 'granted'),
-(70, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:41:19', 'Entry', 'granted'),
-(71, 1, '82 04 10 01', 2, 3, '2025-10-10 10:41:27', 'Entry', 'granted'),
-(72, 1, '82 04 10 01', 1, 3, '2025-10-10 10:41:31', 'Entry', 'granted'),
-(73, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:44:08', 'Entry', 'granted'),
-(74, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:11', 'Entry', 'granted'),
-(75, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:45:47', 'Entry', 'denied'),
-(76, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:45:52', 'Entry', 'denied'),
-(77, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:45:56', 'Entry', 'granted'),
-(78, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:46:13', 'Entry', 'denied'),
-(79, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:46:17', 'Entry', 'granted'),
-(80, 1, '82 04 10 01', 1, 3, '2025-10-10 10:46:23', 'Entry', 'granted'),
-(81, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:46:28', 'Entry', 'denied'),
-(82, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:03', 'Entry', 'granted'),
-(83, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:26', 'Entry', 'granted'),
-(84, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:48:33', 'Entry', 'granted'),
-(85, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 10:48:41', 'Exit', 'granted'),
-(86, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 10:48:48', 'Entry', 'granted'),
-(87, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:48:56', 'Entry', 'denied'),
-(88, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:48:58', 'Entry', 'denied'),
-(89, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:49:01', 'Entry', 'denied'),
-(90, 1, '82 04 10 01', 2, NULL, '2025-10-10 10:49:04', 'Entry', 'denied'),
-(91, 1, '82 04 10 01', 1, 3, '2025-10-10 10:49:06', 'Entry', 'granted'),
-(92, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 10:49:10', 'Entry', 'granted'),
-(93, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:16', 'Entry', 'denied'),
-(94, 2, 'D3 CB B1 38', 1, NULL, '2025-10-10 10:49:18', 'Entry', 'denied'),
-(95, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:20', 'Entry', 'granted'),
-(96, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:31', 'Entry', 'granted'),
-(97, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:02:45', 'Entry', 'granted'),
-(98, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:05:31', 'Exit', 'granted'),
-(99, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:35', 'Entry', 'denied'),
-(100, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:38', 'Entry', 'denied'),
-(101, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:47', 'Entry', 'denied'),
-(102, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:05:49', 'Entry', 'denied'),
-(103, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:05:55', 'Entry', 'granted'),
-(104, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:06:02', 'Entry', 'granted'),
-(105, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:11', 'Exit', 'granted'),
-(106, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:17', 'Entry', 'granted'),
-(107, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:24', 'Exit', 'granted'),
-(108, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:06:31', 'Entry', 'granted'),
-(109, 1, '82 04 10 01', 2, NULL, '2025-10-10 11:07:24', 'Entry', 'denied'),
-(110, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:28', 'Exit', 'granted'),
-(111, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:32', 'Entry', 'granted'),
-(112, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:40', 'Exit', 'granted'),
-(113, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:07:43', 'Entry', 'granted'),
-(114, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:03', 'Entry', 'granted'),
-(115, 2, 'D3 CB B1 38', 2, 1, '2025-10-10 11:09:23', 'Entry', 'granted'),
-(116, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:30', 'Exit', 'granted'),
-(117, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:33', 'Entry', 'granted'),
-(118, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:09:41', 'Exit', 'granted'),
-(119, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:10:28', 'Entry', 'granted'),
-(120, 8, 'A4 12 3D 05', 1, NULL, '2025-10-10 11:10:36', 'Exit', 'granted'),
-(121, 8, 'A4 12 3D 05', 1, NULL, '2025-10-10 11:10:40', 'Entry', 'granted'),
-(122, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:13:13', 'Exit', 'granted'),
-(123, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:13:15', 'Entry', 'granted'),
-(124, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:13:51', 'Exit', 'granted'),
-(125, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:13:55', 'Entry', 'granted'),
-(126, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:14:04', 'Exit', 'granted'),
-(127, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:14:09', 'Entry', 'granted'),
-(128, 8, 'A4 12 3D 05', 2, NULL, '2025-10-10 11:14:18', 'Exit', 'granted'),
-(129, NULL, '61 DE 6A 05', 1, NULL, '2025-10-13 08:09:23', 'Entry', 'denied'),
-(130, NULL, '61 DE 6A 05', 1, NULL, '2025-10-13 08:09:26', 'Entry', 'denied'),
-(131, NULL, '61 DE 6A 05', 1, NULL, '2025-10-13 08:09:29', 'Entry', 'denied'),
-(132, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:25', 'Entry', 'denied'),
-(133, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:28', 'Entry', 'denied'),
-(134, NULL, '44 22 95 04', 2, NULL, '2025-10-13 08:11:30', 'Entry', 'denied'),
-(135, 1, '44 22 95 04', 1, NULL, '2025-10-13 08:13:49', 'Entry', 'denied'),
-(136, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:13:54', 'Exit', 'granted'),
-(137, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:14:01', 'Entry', 'granted'),
-(138, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:14:34', 'Entry', 'granted'),
-(139, 1, '44 22 95 04', 1, NULL, '2025-10-13 08:14:40', 'Entry', 'denied'),
-(140, 1, '44 22 95 04', 2, NULL, '2025-10-13 08:14:43', 'Entry', 'denied'),
-(141, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:14:46', 'Exit', 'granted'),
-(142, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:14:56', 'Exit', 'granted'),
-(143, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:15:24', 'Entry', 'granted'),
-(144, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:15:33', 'Exit', 'granted'),
-(145, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:16:24', 'Entry', 'granted'),
-(146, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:16:32', 'Exit', 'granted'),
-(147, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:16:48', 'Entry', 'granted'),
-(148, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:16:55', 'Exit', 'granted'),
-(149, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:16:58', 'Entry', 'granted'),
-(150, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:17:05', 'Exit', 'granted'),
-(151, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:18:26', 'Entry', 'granted'),
-(152, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:18:35', 'Exit', 'granted'),
-(153, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:18:42', 'Entry', 'granted'),
-(154, 8, '61 DE 6A 05', 2, NULL, '2025-10-13 08:18:57', 'Exit', 'granted'),
-(155, 8, '61 DE 6A 05', 1, NULL, '2025-10-13 08:19:03', 'Entry', 'granted'),
-(156, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:55:37', 'Exit', 'granted'),
-(157, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:55:40', 'Entry', 'granted'),
-(158, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:56:24', 'Exit', 'granted'),
-(159, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:56:27', 'Entry', 'granted'),
-(160, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:56:35', 'Exit', 'granted'),
-(161, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:56:38', 'Entry', 'granted'),
-(162, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:56:48', 'Exit', 'granted'),
-(163, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:58:10', 'Entry', 'granted'),
-(164, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 01:58:25', 'Exit', 'granted'),
-(165, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:00:24', 'Entry', 'granted'),
-(166, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:00:31', 'Exit', 'granted'),
-(167, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:00:36', 'Entry', 'granted'),
-(168, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:12', 'Exit', 'granted'),
-(169, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:16', 'Entry', 'granted'),
-(170, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:23', 'Exit', 'granted'),
-(171, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:25', 'Entry', 'granted'),
-(172, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:33', 'Exit', 'granted'),
-(173, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:38', 'Entry', 'granted'),
-(174, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:45', 'Exit', 'granted'),
-(175, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:50', 'Entry', 'granted'),
-(176, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:01:57', 'Exit', 'granted'),
-(177, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:04:05', 'Entry', 'granted'),
-(178, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:04:16', 'Exit', 'granted'),
-(179, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:04:22', 'Entry', 'granted'),
-(180, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:06:12', 'Exit', 'granted'),
-(181, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:06:20', 'Entry', 'granted'),
-(182, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:06:29', 'Exit', 'granted'),
-(183, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:07:09', 'Entry', 'granted'),
-(184, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:07:15', 'Exit', 'granted'),
-(185, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:07:22', 'Entry', 'granted'),
-(186, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:07:58', 'Exit', 'granted'),
-(187, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:08:04', 'Entry', 'granted'),
-(188, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:08:11', 'Exit', 'granted'),
-(189, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:08:43', 'Entry', 'granted'),
-(190, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:09:59', 'Exit', 'granted'),
-(191, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:10:07', 'Entry', 'granted'),
-(192, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:10:59', 'Exit', 'granted'),
-(193, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:11:01', 'Entry', 'granted'),
-(194, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:11:37', 'Exit', 'granted'),
-(195, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:11:58', 'Entry', 'granted'),
-(196, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:12:20', 'Exit', 'granted'),
-(197, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:12:22', 'Entry', 'granted'),
-(198, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:13:20', 'Exit', 'granted'),
-(199, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:13:23', 'Entry', 'granted'),
-(200, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:13:46', 'Exit', 'granted'),
-(201, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:13:48', 'Entry', 'granted'),
-(202, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:14:29', 'Exit', 'granted'),
-(203, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:14:31', 'Entry', 'granted'),
-(204, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:14:38', 'Exit', 'granted'),
-(205, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:15:13', 'Entry', 'granted'),
-(206, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:15:19', 'Exit', 'granted'),
-(207, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:15:25', 'Entry', 'granted'),
-(208, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:13', 'Exit', 'granted'),
-(209, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:20', 'Entry', 'granted'),
-(210, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:27', 'Exit', 'granted'),
-(211, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:33', 'Entry', 'granted'),
-(212, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:40', 'Exit', 'granted'),
-(213, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:17:56', 'Entry', 'granted'),
-(214, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:04', 'Exit', 'granted'),
-(215, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:07', 'Entry', 'granted'),
-(216, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:13', 'Exit', 'granted'),
-(217, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:18', 'Entry', 'granted'),
-(218, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:25', 'Exit', 'granted'),
-(219, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:18:28', 'Entry', 'granted'),
-(220, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:19:17', 'Exit', 'granted'),
-(221, 8, '61 DE 6A 05', 1, NULL, '2025-10-14 02:19:22', 'Entry', 'granted'),
-(222, NULL, '\0', 1, NULL, '2025-10-14 02:19:52', 'Entry', 'denied'),
-(223, NULL, '82 04 10 01', 1, NULL, '2025-10-16 22:41:25', 'Entry', 'denied'),
-(224, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:04:01', 'Exit', 'granted'),
-(225, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:04:06', 'Entry', 'granted'),
-(226, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:15', 'Exit', 'granted'),
-(227, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:18', 'Entry', 'granted'),
-(228, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:05:27', 'Entry', 'denied'),
-(229, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:05:34', 'Entry', 'denied'),
-(230, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:05:39', 'Exit', 'granted'),
-(231, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:05', 'Entry', 'granted'),
-(232, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:11', 'Exit', 'granted'),
-(233, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:18', 'Entry', 'granted'),
-(234, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:06:27', 'Exit', 'granted'),
-(235, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:07:17', 'Entry', 'denied'),
-(236, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:07:19', 'Entry', 'denied'),
-(237, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:07:22', 'Entry', 'granted'),
-(238, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:08:17', 'Entry', 'denied'),
-(239, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:08:22', 'Entry', 'denied'),
-(240, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:08:25', 'Exit', 'granted'),
-(241, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:18:36', 'Entry', 'granted'),
-(242, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:38:27', 'Exit', 'granted'),
-(243, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:38:32', 'Entry', 'granted'),
-(244, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:38:39', 'Exit', 'granted'),
-(245, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:38:52', 'Entry', 'granted'),
-(246, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:39:03', 'Exit', 'granted'),
-(247, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:41:24', 'Entry', 'granted'),
-(248, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:43:04', 'Exit', 'granted'),
-(249, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:15', 'Entry', 'denied'),
-(250, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:20', 'Entry', 'denied'),
-(251, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:45:24', 'Entry', 'denied'),
-(252, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:45:39', 'Entry', 'denied'),
-(253, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:45:43', 'Entry', 'denied'),
-(254, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:45:59', 'Entry', 'granted'),
-(255, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:24', 'Entry', 'denied'),
-(256, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 12:47:43', 'Entry', 'denied'),
-(257, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:47:46', 'Exit', 'granted'),
-(258, NULL, '82 04 10 01', 1, NULL, '2025-10-17 12:47:52', 'Entry', 'denied'),
-(259, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 12:47:55', 'Entry', 'denied'),
-(260, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:47:57', 'Entry', 'granted'),
-(261, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:49:37', 'Exit', 'granted'),
-(262, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:49:41', 'Entry', 'granted'),
-(263, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:50:41', 'Exit', 'granted'),
-(264, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 12:50:46', 'Entry', 'granted'),
-(265, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 13:10:46', 'Entry', 'denied'),
-(266, NULL, '82 04 10 01', 1, NULL, '2025-10-17 13:10:50', 'Entry', 'denied'),
-(267, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 13:10:53', 'Entry', 'denied'),
-(268, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:10:58', 'Exit', 'granted'),
-(269, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:11:19', 'Entry', 'granted'),
-(270, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:11:34', 'Exit', 'granted'),
-(271, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:11:38', 'Entry', 'granted'),
-(272, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:11:44', 'Exit', 'granted'),
-(273, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:11:58', 'Entry', 'granted'),
-(274, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:14:33', 'Exit', 'granted'),
-(275, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:14:41', 'Entry', 'granted'),
-(276, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:15:32', 'Exit', 'granted'),
-(277, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:15:36', 'Entry', 'granted'),
-(278, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:15:47', 'Exit', 'granted'),
-(279, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:15:52', 'Entry', 'granted'),
-(280, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:20:01', 'Exit', 'granted'),
-(281, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:20:09', 'Entry', 'granted'),
-(282, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:23:11', 'Exit', 'granted'),
-(283, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:23:16', 'Entry', 'granted'),
-(284, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:24:02', 'Exit', 'granted'),
-(285, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:24:10', 'Entry', 'granted'),
-(286, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:24:39', 'Exit', 'granted'),
-(287, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:24:43', 'Entry', 'granted'),
-(288, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:27:47', 'Exit', 'granted'),
-(289, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:27:52', 'Entry', 'granted'),
-(290, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:31:42', 'Exit', 'granted'),
-(291, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:31:48', 'Entry', 'granted'),
-(292, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:34:46', 'Exit', 'granted'),
-(293, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:34:51', 'Entry', 'granted'),
-(294, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:37:05', 'Exit', 'granted'),
-(295, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:37:11', 'Entry', 'granted'),
-(296, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:37:28', 'Exit', 'granted'),
-(297, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:37:32', 'Entry', 'granted'),
-(298, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:38:12', 'Exit', 'granted'),
-(299, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:38:15', 'Entry', 'granted'),
-(300, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:57:10', 'Exit', 'granted'),
-(301, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 13:57:14', 'Entry', 'granted'),
-(302, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 14:00:33', 'Exit', 'granted'),
-(303, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 14:00:41', 'Entry', 'granted'),
-(304, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 14:01:59', 'Exit', 'granted'),
-(305, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 14:02:25', 'Entry', 'granted'),
-(306, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 14:02:44', 'Exit', 'granted'),
-(307, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:24', 'Entry', 'denied'),
-(308, NULL, '82 04 10 01', 1, NULL, '2025-10-17 16:46:31', 'Entry', 'denied'),
-(309, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:35', 'Entry', 'denied'),
-(310, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:39', 'Entry', 'denied'),
-(311, 2, 'D3 CB B1 38', 1, NULL, '2025-10-17 16:46:41', 'Entry', 'denied'),
-(312, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-17 16:46:46', 'Entry', 'denied'),
-(313, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:46:49', 'Entry', 'granted'),
-(314, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:48:46', 'Exit', 'granted'),
-(315, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:48:50', 'Entry', 'granted'),
-(316, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:51:16', 'Exit', 'granted'),
-(317, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:51:20', 'Entry', 'granted'),
-(318, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:52:10', 'Exit', 'granted'),
-(319, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:52:18', 'Entry', 'granted'),
-(320, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:52:26', 'Exit', 'granted'),
-(321, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:52:56', 'Entry', 'granted'),
-(322, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:53:19', 'Exit', 'granted'),
-(323, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:53:58', 'Entry', 'granted'),
-(324, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:54:15', 'Exit', 'granted'),
-(325, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 16:54:18', 'Entry', 'granted'),
-(326, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 17:00:10', 'Exit', 'granted'),
-(327, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 17:00:34', 'Entry', 'granted'),
-(328, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 17:01:14', 'Exit', 'granted'),
-(329, 8, '61 DE 6A 05', 1, NULL, '2025-10-17 17:01:16', 'Entry', 'granted'),
-(330, NULL, 'RFID Ready - Waiting for Card...', 1, NULL, '2025-10-21 16:20:08', 'Entry', 'denied'),
-(331, NULL, 'D3CBB138', 1, NULL, '2025-10-21 16:20:13', 'Entry', 'denied'),
-(332, NULL, 'ACCESS DENIED', 1, NULL, '2025-10-21 16:20:13', 'Entry', 'denied'),
-(333, NULL, '82041001', 1, NULL, '2025-10-21 16:20:20', 'Entry', 'denied'),
-(334, NULL, 'ACCESS DENIED', 1, NULL, '2025-10-21 16:20:20', 'Entry', 'denied'),
-(335, NULL, 'A4123D05', 1, NULL, '2025-10-21 16:20:25', 'Entry', 'denied'),
-(336, NULL, 'ACCESS DENIED', 1, NULL, '2025-10-21 16:20:25', 'Entry', 'denied'),
-(337, NULL, 'RFID Ready - Waiting for Card...', 1, NULL, '2025-10-21 16:20:45', 'Entry', 'denied'),
-(338, NULL, 'A4123D05', 1, NULL, '2025-10-21 16:20:48', 'Entry', 'denied'),
-(339, NULL, 'ACCESS DENIED', 1, NULL, '2025-10-21 16:20:48', 'Entry', 'denied'),
-(340, 2, 'D3 CB B1 38', 1, NULL, '2025-10-21 16:26:45', 'Entry', 'denied'),
-(341, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 16:26:52', 'Entry', 'denied'),
-(342, NULL, '82 04 10 01', 1, NULL, '2025-10-21 16:26:55', 'Entry', 'denied'),
-(343, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:26:58', 'Exit', 'granted'),
-(344, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:27:01', 'Entry', 'granted'),
-(345, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:27:39', 'Exit', 'granted'),
-(346, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:27:44', 'Entry', 'granted'),
-(347, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:27:56', 'Exit', 'granted'),
-(348, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:27:58', 'Entry', 'granted'),
-(349, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:28:27', 'Exit', 'granted'),
-(350, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 16:28:31', 'Entry', 'granted'),
-(351, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:09:44', 'Exit', 'granted'),
-(352, NULL, '82 04 10 01', 1, NULL, '2025-10-21 19:09:48', 'Entry', 'denied'),
-(353, 2, 'D3 CB B1 38', 1, NULL, '2025-10-21 19:09:52', 'Entry', 'denied'),
-(354, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:09:55', 'Entry', 'denied'),
-(355, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:10:03', 'Entry', 'denied'),
-(356, NULL, 'A4 12 3D 05', 1, NULL, '2025-10-21 19:10:06', 'Entry', 'denied'),
-(357, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:10:08', 'Entry', 'granted'),
-(358, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:10:15', 'Exit', 'granted'),
-(359, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:10:19', 'Entry', 'granted'),
-(360, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:13:51', 'Exit', 'granted'),
-(361, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:13:54', 'Entry', 'granted'),
-(362, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:14:23', 'Exit', 'granted'),
-(363, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:14:30', 'Entry', 'granted'),
-(364, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:14:37', 'Exit', 'granted'),
-(365, NULL, '61DE6A05', 1, NULL, '2025-10-21 19:25:57', 'Entry', 'denied'),
-(366, NULL, '❌ Access DENIED', 1, NULL, '2025-10-21 19:25:59', 'Entry', 'denied'),
-(367, NULL, '❌ Access DENIED', 1, NULL, '2025-10-21 19:26:02', 'Entry', 'denied'),
-(368, NULL, '❌ Access DENIED', 1, NULL, '2025-10-21 19:26:04', 'Entry', 'denied'),
-(369, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:30:17', 'Entry', 'granted'),
-(370, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:31:00', 'Exit', 'granted'),
-(371, NULL, '❌ Access DENIED', 1, NULL, '2025-10-21 19:31:06', 'Entry', 'denied'),
-(372, NULL, '❌ Access DENIED', 1, NULL, '2025-10-21 19:31:08', 'Entry', 'denied'),
-(373, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:33:52', 'Entry', 'granted'),
-(374, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:35:00', 'Exit', 'granted'),
-(375, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:36:19', 'Entry', 'granted'),
-(376, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:38:14', 'Exit', 'granted'),
-(377, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:40:04', 'Entry', 'granted'),
-(378, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:40:12', 'Exit', 'granted'),
-(379, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:40:19', 'Entry', 'granted'),
-(380, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:41:31', 'Exit', 'granted'),
-(381, 8, '61 DE 6A 05', 1, NULL, '2025-10-21 19:41:37', 'Entry', 'granted'),
-(382, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:09:39', 'Exit', 'granted'),
-(383, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:09:42', 'Entry', 'granted'),
-(384, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:10:10', 'Exit', 'granted'),
-(385, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:10:12', 'Entry', 'granted'),
-(386, NULL, '82 04 10 01', 1, NULL, '2025-10-22 23:10:55', 'Entry', 'denied'),
-(387, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:11:13', 'Exit', 'granted'),
-(388, 8, '61 DE 6A 05', 1, NULL, '2025-10-22 23:11:19', 'Entry', 'granted'),
-(389, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:58:27', 'Exit', 'granted'),
-(390, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:58:35', 'Entry', 'granted'),
-(391, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:59:25', 'Exit', 'granted'),
-(392, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:59:27', 'Entry', 'granted'),
-(393, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:59:45', 'Exit', 'granted'),
-(394, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:59:47', 'Entry', 'granted'),
-(395, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 13:59:53', 'Exit', 'granted'),
-(396, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:00:31', 'Entry', 'granted'),
-(397, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:03:41', 'Exit', 'granted'),
-(398, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:03:43', 'Entry', 'granted'),
-(399, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:04:56', 'Exit', 'granted'),
-(400, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:04:58', 'Entry', 'granted'),
-(401, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:05:16', 'Exit', 'granted'),
-(402, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:05:18', 'Entry', 'granted'),
-(403, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:05:34', 'Exit', 'granted'),
-(404, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:06:42', 'Entry', 'granted'),
-(405, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:06:49', 'Exit', 'granted'),
-(406, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:11:13', 'Entry', 'granted'),
-(407, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:11:31', 'Exit', 'granted'),
-(408, 8, '61 DE 6A 05', 1, NULL, '2025-10-23 14:11:33', 'Entry', 'granted');
+INSERT INTO `access_log` (`Log_id`, `User_id`, `Rfid_tag`, `Room_id`, `Schedule_id`, `Access_time`, `Access_type`, `device_type`, `Status`) VALUES
+(1, NULL, '51EACD17', 1, NULL, '2026-03-22 17:57:31', 'Entry', 'POWER', 'denied'),
+(2, NULL, '612A7717', 1, NULL, '2026-03-22 17:57:34', 'Entry', 'POWER', 'denied'),
+(3, NULL, '612A7717', 1, NULL, '2026-03-22 17:57:36', 'Entry', 'POWER', 'denied'),
+(4, NULL, '51EACD17', 1, NULL, '2026-03-22 17:57:39', 'Entry', 'POWER', 'denied'),
+(5, NULL, 'D3CBB138', 1, NULL, '2026-03-22 17:57:45', 'Entry', 'POWER', 'denied'),
+(6, NULL, '255AD206', 1, NULL, '2026-03-22 17:57:54', 'Entry', 'POWER', 'denied'),
+(7, NULL, '82041001', 1, NULL, '2026-03-22 17:57:57', 'Entry', 'POWER', 'granted'),
+(8, NULL, '82041001', 1, NULL, '2026-03-22 17:58:01', 'Exit', 'POWER', 'granted'),
+(9, NULL, '82041001', 1, NULL, '2026-03-22 17:58:03', 'Entry', 'POWER', 'granted'),
+(10, NULL, '82041001', 1, NULL, '2026-03-22 17:58:07', 'Exit', 'POWER', 'granted'),
+(11, NULL, '82041001', 1, NULL, '2026-03-22 17:58:11', 'Entry', 'POWER', 'granted'),
+(12, NULL, '82041001', 1, NULL, '2026-03-22 17:58:16', 'Exit', 'POWER', 'granted'),
+(13, NULL, '82041001', 1, NULL, '2026-03-22 17:58:20', 'Entry', 'POWER', 'granted'),
+(14, NULL, '82041001', 1, NULL, '2026-03-22 17:58:23', 'Exit', 'POWER', 'granted'),
+(15, NULL, '82041001', 1, NULL, '2026-03-22 17:58:26', 'Entry', 'POWER', 'granted'),
+(16, NULL, '82041001', 1, NULL, '2026-03-22 17:58:33', 'Exit', 'POWER', 'granted'),
+(17, NULL, '82041001', 1, NULL, '2026-03-22 17:58:36', 'Entry', 'POWER', 'granted'),
+(18, NULL, '82041001', 1, NULL, '2026-03-22 17:58:40', 'Exit', 'POWER', 'granted'),
+(19, NULL, '82041001', 1, NULL, '2026-03-22 17:58:43', 'Entry', 'POWER', 'granted'),
+(20, NULL, '82041001', 1, NULL, '2026-03-22 17:58:47', 'Exit', 'POWER', 'granted'),
+(21, NULL, '82041001', 1, NULL, '2026-03-22 17:58:49', 'Entry', 'POWER', 'granted'),
+(22, NULL, '82041001', 1, NULL, '2026-03-22 17:58:53', 'Exit', 'POWER', 'granted'),
+(23, NULL, '255AD206', 1, NULL, '2026-03-22 17:58:55', 'Entry', 'POWER', 'denied'),
+(24, NULL, 'A4123D05', 1, NULL, '2026-03-22 17:58:58', 'Entry', 'POWER', 'denied'),
+(25, NULL, '61DE6A05', 1, NULL, '2026-03-22 17:59:01', 'Entry', 'POWER', 'denied'),
+(26, NULL, '61DE6A05', 1, NULL, '2026-03-22 17:59:04', 'Entry', 'POWER', 'denied'),
+(27, NULL, 'D3CBB138', 1, NULL, '2026-03-22 17:59:07', 'Entry', 'POWER', 'denied'),
+(28, NULL, '51EACD17', 1, NULL, '2026-03-22 17:59:10', 'Entry', 'POWER', 'denied'),
+(29, NULL, '612A7717', 1, NULL, '2026-03-22 17:59:12', 'Entry', 'POWER', 'denied'),
+(30, NULL, '82041001', 1, NULL, '2026-03-22 17:59:18', 'Entry', 'POWER', 'granted'),
+(31, NULL, '255AD206', 1, NULL, '2026-03-22 17:59:24', 'Entry', 'POWER', 'denied'),
+(32, NULL, '255AD206', 1, NULL, '2026-03-22 17:59:27', 'Entry', 'POWER', 'denied'),
+(33, NULL, '82041001', 1, NULL, '2026-03-22 17:59:30', 'Exit', 'POWER', 'granted'),
+(34, NULL, '82041001', 1, NULL, '2026-03-22 17:59:35', 'Entry', 'POWER', 'granted'),
+(35, NULL, '82041001', 1, NULL, '2026-03-22 17:59:40', 'Exit', 'POWER', 'granted'),
+(36, NULL, '612A7717', 1, NULL, '2026-03-22 20:30:07', 'Entry', 'DOOR', 'denied'),
+(37, NULL, '82041001', 1, NULL, '2026-03-22 20:30:10', 'Entry', 'DOOR', 'granted'),
+(38, NULL, '82041001', 1, NULL, '2026-03-22 20:30:14', 'Exit', 'DOOR', 'granted'),
+(39, NULL, '82041001', 1, NULL, '2026-03-22 20:30:18', 'Entry', 'DOOR', 'granted'),
+(40, NULL, '42193D05', 1, NULL, '2026-03-22 20:46:24', 'Entry', 'DOOR', 'granted'),
+(41, NULL, '42193D05', 1, NULL, '2026-03-22 20:46:30', 'Exit', 'DOOR', 'granted'),
+(42, NULL, '42193D05', 1, NULL, '2026-03-22 20:46:49', 'Entry', 'DOOR', 'granted'),
+(43, NULL, '42193D05', 1, NULL, '2026-03-22 20:47:04', 'Exit', 'DOOR', 'granted'),
+(44, NULL, '51EACD17', 1, NULL, '2026-03-22 21:02:52', 'Entry', 'DOOR', 'denied'),
+(45, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:02:56', 'Entry', 'DOOR', 'denied'),
+(46, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:02:59', 'Entry', 'DOOR', 'denied'),
+(47, NULL, 'A4123D05', 1, NULL, '2026-03-22 21:03:02', 'Entry', 'DOOR', 'denied'),
+(48, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:17', 'Entry', 'DOOR', 'denied'),
+(49, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:19', 'Entry', 'DOOR', 'denied'),
+(50, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:22', 'Entry', 'DOOR', 'denied'),
+(51, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:24', 'Entry', 'DOOR', 'denied'),
+(52, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:28', 'Entry', 'DOOR', 'denied'),
+(53, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:34', 'Entry', 'DOOR', 'denied'),
+(54, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:38', 'Entry', 'DOOR', 'denied'),
+(55, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:41', 'Entry', 'DOOR', 'denied'),
+(56, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:03:44', 'Entry', 'DOOR', 'denied'),
+(57, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:03:46', 'Entry', 'DOOR', 'denied'),
+(58, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:03:49', 'Entry', 'DOOR', 'denied'),
+(59, NULL, 'A4123D05', 1, NULL, '2026-03-22 21:03:56', 'Entry', 'DOOR', 'denied'),
+(60, NULL, '255AD206', 1, NULL, '2026-03-22 21:03:58', 'Entry', 'DOOR', 'denied'),
+(61, NULL, '82041001', 1, NULL, '2026-03-22 21:04:01', 'Exit', 'DOOR', 'granted'),
+(62, NULL, '82041001', 1, NULL, '2026-03-22 21:04:05', 'Entry', 'DOOR', 'granted'),
+(63, NULL, '82041001', 1, NULL, '2026-03-22 21:04:09', 'Exit', 'DOOR', 'granted'),
+(64, NULL, '82041001', 1, NULL, '2026-03-22 21:04:13', 'Entry', 'DOOR', 'granted'),
+(65, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:04:18', 'Entry', 'DOOR', 'denied'),
+(66, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:04:27', 'Entry', 'DOOR', 'denied'),
+(67, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:04:33', 'Entry', 'DOOR', 'denied'),
+(68, NULL, '82041001', 1, NULL, '2026-03-22 21:04:36', 'Exit', 'DOOR', 'granted'),
+(69, NULL, '612A7717', 1, NULL, '2026-03-22 21:04:50', 'Entry', 'DOOR', 'denied'),
+(70, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:04:53', 'Entry', 'DOOR', 'denied'),
+(71, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:04', 'Entry', 'DOOR', 'denied'),
+(72, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:07', 'Entry', 'DOOR', 'denied'),
+(73, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:20', 'Entry', 'DOOR', 'denied'),
+(74, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:22', 'Entry', 'DOOR', 'denied'),
+(75, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:29', 'Entry', 'DOOR', 'denied'),
+(76, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:05:32', 'Entry', 'DOOR', 'denied'),
+(77, NULL, '51EACD17', 1, NULL, '2026-03-22 21:05:34', 'Entry', 'DOOR', 'denied'),
+(78, NULL, '255AD206', 1, NULL, '2026-03-22 21:05:37', 'Entry', 'DOOR', 'denied'),
+(79, NULL, '82041001', 1, NULL, '2026-03-22 21:05:41', 'Entry', 'DOOR', 'granted'),
+(80, NULL, '82041001', 1, NULL, '2026-03-22 21:05:45', 'Exit', 'DOOR', 'granted'),
+(81, NULL, '058E807FFD6200', 1, NULL, '2026-03-22 21:06:02', 'Entry', 'DOOR', 'denied'),
+(82, NULL, '82041001', 1, NULL, '2026-03-22 21:12:30', 'Entry', 'DOOR', 'granted'),
+(83, NULL, '82041001', 1, NULL, '2026-03-22 21:12:33', 'Exit', 'DOOR', 'granted'),
+(84, NULL, '82041001', 1, NULL, '2026-03-22 21:12:38', 'Entry', 'DOOR', 'granted'),
+(85, NULL, '255AD206', 1, NULL, '2026-03-22 21:12:41', 'Entry', 'DOOR', 'denied'),
+(86, NULL, '255AD206', 1, NULL, '2026-03-22 21:13:59', 'Entry', 'DOOR', 'denied'),
+(87, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:02', 'Entry', 'DOOR', 'denied'),
+(88, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:05', 'Entry', 'DOOR', 'denied'),
+(89, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:07', 'Entry', 'DOOR', 'denied'),
+(90, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:09', 'Entry', 'DOOR', 'denied'),
+(91, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:12', 'Entry', 'DOOR', 'denied'),
+(92, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:14', 'Entry', 'DOOR', 'denied'),
+(93, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:17', 'Entry', 'DOOR', 'denied'),
+(94, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:19', 'Entry', 'DOOR', 'denied'),
+(95, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:24', 'Entry', 'DOOR', 'denied'),
+(96, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:27', 'Entry', 'DOOR', 'denied'),
+(97, NULL, '255AD206', 1, NULL, '2026-03-22 21:14:29', 'Entry', 'DOOR', 'denied'),
+(98, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:15:01', 'Entry', 'DOOR', 'denied'),
+(99, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:15:07', 'Entry', 'DOOR', 'denied'),
+(100, NULL, '51EACD17', 1, NULL, '2026-03-22 21:15:43', 'Entry', 'DOOR', 'denied'),
+(101, NULL, '51EACD17', 1, NULL, '2026-03-22 21:15:48', 'Entry', 'DOOR', 'denied'),
+(102, NULL, '255AD206', 1, NULL, '2026-03-22 21:16:18', 'Entry', 'DOOR', 'denied'),
+(103, NULL, '255AD206', 1, NULL, '2026-03-22 21:16:34', 'Entry', 'DOOR', 'denied'),
+(104, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:16:53', 'Entry', 'DOOR', 'denied'),
+(105, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:16:56', 'Entry', 'DOOR', 'denied'),
+(106, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:16:59', 'Entry', 'DOOR', 'denied'),
+(107, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:17:12', 'Entry', 'DOOR', 'denied'),
+(108, NULL, '61DE6A05', 1, NULL, '2026-03-22 21:17:35', 'Entry', 'DOOR', 'denied'),
+(109, NULL, 'A4123D05', 1, NULL, '2026-03-22 21:17:38', 'Entry', 'DOOR', 'denied'),
+(110, NULL, '255AD206', 1, NULL, '2026-03-22 21:17:42', 'Entry', 'DOOR', 'denied'),
+(111, NULL, '51EACD17', 1, NULL, '2026-03-22 21:17:45', 'Entry', 'DOOR', 'denied'),
+(112, NULL, '255AD206', 1, NULL, '2026-03-22 21:17:48', 'Entry', 'DOOR', 'denied'),
+(113, NULL, '51EACD17', 1, NULL, '2026-03-22 21:19:54', 'Entry', 'DOOR', 'denied'),
+(114, NULL, '51EACD17', 1, NULL, '2026-03-22 21:20:09', 'Entry', 'DOOR', 'denied'),
+(115, NULL, '255AD206', 1, NULL, '2026-03-22 21:20:11', 'Entry', 'DOOR', 'denied'),
+(116, NULL, 'A4123D05', 1, NULL, '2026-03-22 21:20:15', 'Entry', 'DOOR', 'denied'),
+(117, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:20:17', 'Entry', 'DOOR', 'denied'),
+(118, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:20:37', 'Entry', 'DOOR', 'denied'),
+(119, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:20:40', 'Entry', 'DOOR', 'denied'),
+(120, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:20:43', 'Entry', 'DOOR', 'denied'),
+(121, NULL, 'D3CBB138', 1, NULL, '2026-03-22 21:24:10', 'Entry', 'DOOR', 'denied'),
+(122, NULL, '51EACD17', 1, NULL, '2026-03-22 21:24:13', 'Entry', 'DOOR', 'denied'),
+(123, NULL, '82041001', 1, NULL, '2026-03-22 21:24:16', 'Exit', 'DOOR', 'granted'),
+(124, NULL, '82041001', 1, NULL, '2026-03-22 21:24:20', 'Entry', 'DOOR', 'granted'),
+(125, NULL, '82041001', 1, NULL, '2026-03-22 21:24:23', 'Exit', 'DOOR', 'granted'),
+(126, NULL, '82041001', 1, NULL, '2026-03-23 15:26:23', 'Entry', 'POWER', 'granted'),
+(127, NULL, '82041001', 1, NULL, '2026-03-23 15:26:27', 'Exit', 'POWER', 'granted'),
+(128, NULL, '82041001', 1, NULL, '2026-03-23 15:26:30', 'Entry', 'POWER', 'granted'),
+(129, NULL, '82041001', 1, NULL, '2026-03-23 15:26:34', 'Exit', 'POWER', 'granted'),
+(130, NULL, '82041001', 1, NULL, '2026-03-23 15:26:37', 'Entry', 'POWER', 'granted'),
+(131, NULL, '82041001', 1, NULL, '2026-03-23 15:26:42', 'Exit', 'POWER', 'granted'),
+(132, NULL, '82041001', 1, NULL, '2026-03-23 15:26:47', 'Entry', 'POWER', 'granted'),
+(133, NULL, '82041001', 1, NULL, '2026-03-23 15:26:51', 'Exit', 'POWER', 'granted'),
+(134, NULL, '82041001', 1, NULL, '2026-03-23 15:29:38', 'Entry', 'POWER', 'granted'),
+(135, NULL, '82041001', 1, NULL, '2026-03-23 15:29:43', 'Exit', 'POWER', 'granted'),
+(136, NULL, '51EACD17', 1, NULL, '2026-03-23 15:43:17', 'Entry', 'POWER', 'denied'),
+(137, NULL, '51EACD17', 1, NULL, '2026-03-23 15:43:22', 'Entry', 'POWER', 'denied'),
+(138, NULL, '51EACD17', 1, NULL, '2026-03-23 15:43:25', 'Entry', 'POWER', 'denied'),
+(139, NULL, '51EACD17', 1, NULL, '2026-03-23 15:43:31', 'Entry', 'POWER', 'denied'),
+(140, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:33', 'Entry', 'POWER', 'denied'),
+(141, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:37', 'Entry', 'POWER', 'denied'),
+(142, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:39', 'Entry', 'POWER', 'denied'),
+(143, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:43', 'Entry', 'POWER', 'denied'),
+(144, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:46', 'Entry', 'POWER', 'denied'),
+(145, NULL, '255AD206', 1, NULL, '2026-03-23 15:43:50', 'Entry', 'POWER', 'denied'),
+(146, NULL, '51EACD17', 1, NULL, '2026-03-23 15:45:19', 'Entry', 'POWER', 'denied'),
+(147, NULL, '255AD206', 1, NULL, '2026-03-23 15:45:22', 'Entry', 'POWER', 'denied'),
+(148, NULL, '61DE6A05', 1, NULL, '2026-03-23 15:55:14', 'Entry', 'DOOR', 'denied'),
+(149, NULL, '82041001', 1, NULL, '2026-03-23 15:55:17', 'Entry', 'DOOR', 'granted'),
+(150, NULL, '82041001', 1, NULL, '2026-03-23 15:55:19', 'Exit', 'DOOR', 'granted'),
+(151, NULL, '82041001', 1, NULL, '2026-03-23 15:55:24', 'Entry', 'DOOR', 'granted'),
+(152, NULL, '82041001', 1, NULL, '2026-03-23 15:55:29', 'Exit', 'DOOR', 'granted'),
+(153, NULL, '82041001', 1, NULL, '2026-03-23 15:55:34', 'Entry', 'DOOR', 'granted'),
+(154, NULL, '82041001', 1, NULL, '2026-03-23 15:55:36', 'Exit', 'DOOR', 'granted'),
+(155, NULL, '82041001', 1, NULL, '2026-03-23 15:55:43', 'Entry', 'DOOR', 'granted'),
+(156, NULL, '82041001', 1, NULL, '2026-03-23 15:55:49', 'Exit', 'DOOR', 'granted'),
+(157, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:55:51', 'Entry', 'DOOR', 'denied'),
+(158, NULL, '82041001', 1, NULL, '2026-03-23 15:55:54', 'Entry', 'DOOR', 'granted'),
+(159, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:55:55', 'Entry', 'DOOR', 'denied'),
+(160, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:55:58', 'Entry', 'DOOR', 'denied'),
+(161, NULL, '82041001', 1, NULL, '2026-03-23 15:56:04', 'Exit', 'DOOR', 'granted'),
+(162, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:05', 'Entry', 'DOOR', 'denied'),
+(163, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:07', 'Entry', 'DOOR', 'denied'),
+(164, NULL, '82041001', 1, NULL, '2026-03-23 15:56:08', 'Entry', 'DOOR', 'granted'),
+(165, NULL, '82041001', 1, NULL, '2026-03-23 15:56:12', 'Exit', 'DOOR', 'granted'),
+(166, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:13', 'Entry', 'DOOR', 'denied'),
+(167, NULL, '82041001', 1, NULL, '2026-03-23 15:56:16', 'Entry', 'DOOR', 'granted'),
+(168, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:16', 'Entry', 'DOOR', 'denied'),
+(169, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:19', 'Entry', 'DOOR', 'denied'),
+(170, NULL, '82041001', 1, NULL, '2026-03-23 15:56:22', 'Exit', 'DOOR', 'granted'),
+(171, NULL, '82041001', 1, NULL, '2026-03-23 15:56:26', 'Entry', 'DOOR', 'granted'),
+(172, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:56:49', 'Entry', 'DOOR', 'denied'),
+(173, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:57:09', 'Entry', 'DOOR', 'denied'),
+(174, NULL, '82041001', 1, NULL, '2026-03-23 15:57:14', 'Exit', 'DOOR', 'granted'),
+(175, NULL, '82041001', 1, NULL, '2026-03-23 15:57:18', 'Entry', 'DOOR', 'granted'),
+(176, NULL, '82041001', 1, NULL, '2026-03-23 15:57:22', 'Exit', 'DOOR', 'granted'),
+(177, NULL, '82041001', 1, NULL, '2026-03-23 15:57:29', 'Entry', 'DOOR', 'granted'),
+(178, NULL, '82041001', 1, NULL, '2026-03-23 15:57:33', 'Exit', 'DOOR', 'granted'),
+(179, NULL, '82041001', 1, NULL, '2026-03-23 15:57:37', 'Entry', 'DOOR', 'granted'),
+(180, NULL, '82041001', 1, NULL, '2026-03-23 15:57:58', 'Exit', 'DOOR', 'granted'),
+(181, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:58:08', 'Entry', 'DOOR', 'denied'),
+(182, NULL, '82041001', 1, NULL, '2026-03-23 15:58:33', 'Entry', 'DOOR', 'granted'),
+(183, NULL, '82041001', 1, NULL, '2026-03-23 15:58:35', 'Exit', 'DOOR', 'granted'),
+(184, NULL, '82041001', 1, NULL, '2026-03-23 15:58:37', 'Entry', 'DOOR', 'granted'),
+(185, NULL, '82041001', 1, NULL, '2026-03-23 15:58:39', 'Exit', 'DOOR', 'granted'),
+(186, NULL, '82041001', 1, NULL, '2026-03-23 15:58:44', 'Entry', 'DOOR', 'granted'),
+(187, NULL, '82041001', 1, NULL, '2026-03-23 15:58:48', 'Exit', 'DOOR', 'granted'),
+(188, NULL, '82041001', 1, NULL, '2026-03-23 15:58:49', 'Entry', 'DOOR', 'granted'),
+(189, NULL, '82041001', 1, NULL, '2026-03-23 15:58:55', 'Exit', 'DOOR', 'granted'),
+(190, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:58:58', 'Entry', 'DOOR', 'denied'),
+(191, NULL, '82041001', 1, NULL, '2026-03-23 15:58:59', 'Entry', 'DOOR', 'granted'),
+(192, NULL, '82041001', 1, NULL, '2026-03-23 15:59:03', 'Exit', 'DOOR', 'granted'),
+(193, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:59:04', 'Entry', 'DOOR', 'denied'),
+(194, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:59:06', 'Entry', 'DOOR', 'denied'),
+(195, NULL, '82041001', 1, NULL, '2026-03-23 15:59:07', 'Entry', 'DOOR', 'granted'),
+(196, NULL, 'D3CBB138', 1, NULL, '2026-03-23 15:59:49', 'Entry', 'DOOR', 'denied'),
+(197, NULL, '82041001', 1, NULL, '2026-03-23 15:59:58', 'Exit', 'DOOR', 'granted'),
+(198, NULL, '82041001', 1, NULL, '2026-03-23 16:00:03', 'Entry', 'DOOR', 'granted'),
+(199, NULL, '82041001', 1, NULL, '2026-03-23 16:00:09', 'Exit', 'DOOR', 'granted'),
+(200, NULL, '82041001', 1, NULL, '2026-03-23 16:00:18', 'Entry', 'DOOR', 'granted'),
+(201, NULL, '82041001', 1, NULL, '2026-03-23 16:00:33', 'Exit', 'POWER', 'granted'),
+(202, NULL, '82041001', 1, NULL, '2026-03-23 16:00:36', 'Entry', 'POWER', 'granted'),
+(203, NULL, '82041001', 1, NULL, '2026-03-23 16:00:43', 'Exit', 'POWER', 'granted'),
+(204, NULL, '42193D05', 1, NULL, '2026-03-25 00:35:57', 'Entry', 'DOOR', 'granted'),
+(205, NULL, '42193D05', 1, NULL, '2026-03-25 00:36:02', 'Exit', 'DOOR', 'granted'),
+(206, NULL, '42193D05', 1, NULL, '2026-03-25 00:36:07', 'Entry', 'DOOR', 'granted'),
+(207, NULL, '42193D05', 1, NULL, '2026-03-25 00:36:15', 'Exit', 'DOOR', 'granted'),
+(208, NULL, '42193D05', 1, NULL, '2026-03-25 00:36:55', 'Entry', 'DOOR', 'granted'),
+(209, NULL, '42193D05', 1, NULL, '2026-03-25 00:37:29', 'Exit', 'DOOR', 'granted'),
+(210, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:38:52', 'Entry', 'DOOR', 'granted'),
+(211, NULL, '42193D05', 1, NULL, '2026-03-25 00:39:04', 'Entry', 'DOOR', 'denied'),
+(212, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:39:33', 'Exit', 'DOOR', 'granted'),
+(213, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:39:43', 'Entry', 'DOOR', 'granted'),
+(214, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:40:48', 'Exit', 'DOOR', 'granted'),
+(215, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:40:55', 'Entry', 'DOOR', 'granted'),
+(216, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:43:17', 'Exit', 'DOOR', 'granted'),
+(217, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:43:22', 'Entry', 'DOOR', 'granted'),
+(218, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:04', 'Exit', 'POWER', 'denied'),
+(219, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:06', 'Exit', 'POWER', 'denied'),
+(220, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:09', 'Exit', 'POWER', 'denied'),
+(221, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:12', 'Exit', 'POWER', 'denied'),
+(222, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:14', 'Exit', 'POWER', 'denied'),
+(223, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:17', 'Exit', 'POWER', 'denied'),
+(224, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:19', 'Exit', 'POWER', 'denied'),
+(225, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:44:21', 'Exit', 'POWER', 'denied'),
+(226, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:46:02', 'Exit', 'POWER', 'denied'),
+(227, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:46:04', 'Exit', 'POWER', 'denied'),
+(228, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:46:50', 'Exit', 'DOOR', 'granted'),
+(229, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:46:55', 'Entry', 'DOOR', 'granted'),
+(230, NULL, '42193D05', 1, NULL, '2026-03-25 00:47:01', 'Entry', 'DOOR', 'denied'),
+(231, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:05', 'Exit', 'DOOR', 'granted'),
+(232, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:12', 'Entry', 'DOOR', 'granted'),
+(233, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:18', 'Exit', 'DOOR', 'granted'),
+(234, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:22', 'Entry', 'DOOR', 'granted'),
+(235, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:26', 'Exit', 'DOOR', 'granted'),
+(236, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:47', 'Entry', 'DOOR', 'granted'),
+(237, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:51', 'Exit', 'DOOR', 'granted'),
+(238, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:55', 'Entry', 'DOOR', 'granted'),
+(239, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:47:59', 'Exit', 'DOOR', 'granted'),
+(240, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:02', 'Entry', 'DOOR', 'granted'),
+(241, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:06', 'Exit', 'DOOR', 'granted'),
+(242, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:15', 'Entry', 'DOOR', 'granted'),
+(243, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:19', 'Exit', 'DOOR', 'granted'),
+(244, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:23', 'Entry', 'DOOR', 'granted'),
+(245, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:26', 'Exit', 'DOOR', 'granted'),
+(246, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:30', 'Entry', 'DOOR', 'granted'),
+(247, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:34', 'Exit', 'DOOR', 'granted'),
+(248, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:38', 'Entry', 'DOOR', 'granted'),
+(249, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:51', 'Exit', 'DOOR', 'granted'),
+(250, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:55', 'Entry', 'DOOR', 'granted'),
+(251, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:48:59', 'Exit', 'DOOR', 'granted'),
+(252, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:04', 'Entry', 'DOOR', 'granted'),
+(253, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:08', 'Exit', 'DOOR', 'granted'),
+(254, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:31', 'Entry', 'DOOR', 'granted'),
+(255, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:42', 'Exit', 'DOOR', 'granted'),
+(256, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:48', 'Entry', 'DOOR', 'granted'),
+(257, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:49:56', 'Exit', 'DOOR', 'granted'),
+(258, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:50:00', 'Entry', 'DOOR', 'granted'),
+(259, NULL, '9DEDD106', 1, NULL, '2026-03-25 00:50:04', 'Exit', 'DOOR', 'granted'),
+(260, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:14:58', 'Entry', 'POWER', 'denied'),
+(261, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:15:04', 'Entry', 'POWER', 'denied'),
+(262, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:15:24', 'Entry', 'POWER', 'denied'),
+(263, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:15:28', 'Entry', 'POWER', 'denied'),
+(264, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:16:18', 'Entry', 'POWER', 'denied'),
+(265, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:16:21', 'Entry', 'POWER', 'denied'),
+(266, NULL, '9DEDD106', 1, NULL, '2026-03-26 17:16:24', 'Entry', 'POWER', 'denied'),
+(267, NULL, '2A914205', 1, NULL, '2026-03-26 17:26:27', 'Entry', 'POWER', 'denied'),
+(268, NULL, '2A914205', 1, NULL, '2026-03-26 17:27:45', 'Entry', 'POWER', 'granted'),
+(269, NULL, '2A914205', 1, NULL, '2026-03-26 17:33:33', 'Exit', 'POWER', 'granted'),
+(270, NULL, '2A914205', 1, NULL, '2026-03-26 17:33:42', 'Entry', 'POWER', 'granted'),
+(271, NULL, '2A914205', 1, NULL, '2026-03-26 17:49:22', 'Exit', 'POWER', 'granted'),
+(272, NULL, '2A914205', 1, NULL, '2026-03-26 17:49:30', 'Entry', 'POWER', 'granted'),
+(273, NULL, '2A914205', 1, NULL, '2026-03-26 17:49:42', 'Exit', 'POWER', 'granted'),
+(274, NULL, '2A914205', 1, NULL, '2026-03-26 17:51:09', 'Entry', 'POWER', 'granted'),
+(275, NULL, '42193D05', 1, NULL, '2026-03-26 19:34:25', 'Entry', 'POWER', 'denied'),
+(276, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:34:28', 'Entry', 'POWER', 'denied'),
+(277, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:34:32', 'Entry', 'DOOR', 'denied'),
+(278, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:34:35', 'Entry', 'DOOR', 'denied'),
+(279, NULL, '42193D05', 1, NULL, '2026-03-26 19:34:39', 'Entry', 'DOOR', 'denied'),
+(280, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:35:15', 'Entry', 'POWER', 'denied'),
+(281, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:35:17', 'Entry', 'DOOR', 'granted'),
+(282, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:35:22', 'Exit', 'DOOR', 'granted'),
+(283, NULL, '42193D05', 1, NULL, '2026-03-26 19:35:29', 'Entry', 'DOOR', 'denied'),
+(284, NULL, '42193D05', 1, NULL, '2026-03-26 19:35:34', 'Entry', 'DOOR', 'denied'),
+(285, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:37:07', 'Entry', 'POWER', 'denied'),
+(286, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:37:09', 'Entry', 'DOOR', 'granted'),
+(287, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:37:11', 'Exit', 'POWER', 'denied'),
+(288, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:37:14', 'Exit', 'DOOR', 'granted'),
+(289, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:52:45', 'Entry', 'DOOR', 'granted'),
+(290, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:04', 'Exit', 'DOOR', 'granted'),
+(291, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:15', 'Entry', 'DOOR', 'granted'),
+(292, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:21', 'Exit', 'DOOR', 'granted'),
+(293, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:29', 'Entry', 'DOOR', 'granted'),
+(294, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:35', 'Exit', 'POWER', 'denied'),
+(295, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:38', 'Exit', 'POWER', 'denied'),
+(296, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:40', 'Exit', 'POWER', 'denied'),
+(297, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:53:43', 'Exit', 'POWER', 'denied'),
+(298, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:54:10', 'Exit', 'POWER', 'denied'),
+(299, NULL, '9DEDD106', 1, NULL, '2026-03-26 19:54:39', 'Exit', 'POWER', 'denied'),
+(300, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:25', 'Entry', 'POWER', 'denied'),
+(301, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:27', 'Entry', 'POWER', 'denied'),
+(302, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:30', 'Entry', 'POWER', 'denied'),
+(303, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:33', 'Entry', 'POWER', 'denied'),
+(304, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:35', 'Entry', 'POWER', 'denied'),
+(305, NULL, '51EACD17', 1, NULL, '2026-03-27 21:51:38', 'Entry', 'POWER', 'denied'),
+(306, NULL, '51EACD17', 1, NULL, '2026-03-27 21:52:59', 'Entry', 'POWER', 'granted'),
+(307, NULL, '51EACD17', 1, NULL, '2026-03-27 21:53:08', 'Exit', 'POWER', 'granted'),
+(308, NULL, '51EACD17', 1, NULL, '2026-03-27 21:53:23', 'Entry', 'POWER', 'granted'),
+(309, NULL, '51EACD17', 1, NULL, '2026-03-27 21:53:37', 'Exit', 'POWER', 'granted'),
+(310, NULL, '51EACD17', 1, NULL, '2026-03-27 21:53:42', 'Entry', 'POWER', 'granted'),
+(311, NULL, '51EACD17', 1, NULL, '2026-03-27 21:53:52', 'Exit', 'POWER', 'granted'),
+(312, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:17', 'Entry', 'POWER', 'granted'),
+(313, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:26', 'Exit', 'POWER', 'granted'),
+(314, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:29', 'Entry', 'POWER', 'granted'),
+(315, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:33', 'Exit', 'POWER', 'granted'),
+(316, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:54', 'Entry', 'POWER', 'granted'),
+(317, NULL, '51EACD17', 1, NULL, '2026-03-27 21:56:58', 'Exit', 'POWER', 'granted'),
+(318, NULL, '51EACD17', 1, NULL, '2026-03-27 21:57:16', 'Entry', 'POWER', 'granted'),
+(319, NULL, '51EACD17', 1, NULL, '2026-03-27 21:57:25', 'Exit', 'POWER', 'granted'),
+(320, NULL, '51EACD17', 1, NULL, '2026-03-27 21:57:28', 'Entry', 'POWER', 'granted'),
+(321, NULL, '51EACD17', 1, NULL, '2026-03-27 21:57:33', 'Exit', 'POWER', 'granted'),
+(322, NULL, '51EACD17', 1, NULL, '2026-03-27 21:58:56', 'Entry', 'POWER', 'granted'),
+(323, NULL, '51EACD17', 1, NULL, '2026-03-27 21:59:01', 'Exit', 'POWER', 'granted'),
+(324, NULL, '51EACD17', 1, NULL, '2026-03-27 22:02:39', 'Entry', 'POWER', 'granted'),
+(325, NULL, '51EACD17', 1, NULL, '2026-03-27 22:02:43', 'Exit', 'POWER', 'granted'),
+(326, NULL, '51EACD17', 1, NULL, '2026-03-27 22:03:41', 'Entry', 'POWER', 'granted'),
+(327, NULL, '51EACD17', 1, NULL, '2026-03-27 22:10:55', 'Exit', 'POWER', 'granted'),
+(328, NULL, '51EACD17', 1, NULL, '2026-03-27 22:10:57', 'Entry', 'POWER', 'granted'),
+(329, NULL, '51EACD17', 1, NULL, '2026-03-27 22:11:03', 'Exit', 'POWER', 'granted'),
+(330, NULL, '51EACD17', 1, NULL, '2026-03-27 22:11:05', 'Entry', 'POWER', 'granted'),
+(331, NULL, '51EACD17', 1, NULL, '2026-03-27 22:11:09', 'Exit', 'POWER', 'granted'),
+(332, NULL, '51EACD17', 1, NULL, '2026-03-27 22:11:11', 'Entry', 'POWER', 'granted'),
+(333, NULL, '51EACD17', 1, NULL, '2026-03-27 22:11:15', 'Exit', 'POWER', 'granted'),
+(334, NULL, '51EACD17', 1, NULL, '2026-03-27 22:15:47', 'Entry', 'POWER', 'granted'),
+(335, NULL, '51EACD17', 1, NULL, '2026-03-27 22:15:53', 'Exit', 'POWER', 'granted'),
+(336, NULL, '51EACD17', 1, NULL, '2026-03-27 22:15:56', 'Entry', 'POWER', 'granted'),
+(337, NULL, '51EACD17', 1, NULL, '2026-03-27 22:16:00', 'Exit', 'POWER', 'granted'),
+(338, NULL, '51EACD17', 1, NULL, '2026-03-27 22:16:02', 'Entry', 'POWER', 'granted'),
+(339, NULL, '51EACD17', 1, NULL, '2026-03-27 22:16:09', 'Exit', 'POWER', 'granted'),
+(340, NULL, '51EACD17', 1, NULL, '2026-03-27 22:16:10', 'Entry', 'POWER', 'granted'),
+(341, NULL, '51EACD17', 1, NULL, '2026-03-27 22:16:14', 'Exit', 'POWER', 'granted'),
+(342, NULL, '51EACD17', 1, NULL, '2026-03-27 23:05:52', 'Entry', 'DOOR', 'granted'),
+(343, NULL, '51EACD17', 1, NULL, '2026-03-27 23:05:57', 'Exit', 'DOOR', 'granted'),
+(344, NULL, '51EACD17', 1, NULL, '2026-03-27 23:06:03', 'Entry', 'DOOR', 'granted'),
+(345, NULL, '51EACD17', 1, NULL, '2026-03-27 23:06:08', 'Exit', 'DOOR', 'granted'),
+(346, NULL, '51EACD17', 1, NULL, '2026-03-27 23:06:17', 'Entry', 'DOOR', 'granted'),
+(347, NULL, '51EACD17', 1, NULL, '2026-03-27 23:06:22', 'Exit', 'DOOR', 'granted'),
+(348, NULL, '51EACD17', 1, NULL, '2026-03-27 23:10:20', 'Entry', 'DOOR', 'granted'),
+(349, NULL, '51EACD17', 1, NULL, '2026-03-27 23:10:25', 'Exit', 'DOOR', 'granted'),
+(350, NULL, '51EACD17', 1, NULL, '2026-03-27 23:10:32', 'Entry', 'DOOR', 'granted'),
+(351, NULL, '51EACD17', 1, NULL, '2026-03-27 23:10:36', 'Exit', 'DOOR', 'granted'),
+(352, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:08', 'Entry', 'DOOR', 'granted'),
+(353, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:12', 'Exit', 'POWER', 'granted'),
+(354, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:15', 'Entry', 'POWER', 'granted'),
+(355, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:17', 'Exit', 'DOOR', 'granted'),
+(356, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:26', 'Entry', 'DOOR', 'granted'),
+(357, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:30', 'Exit', 'POWER', 'granted'),
+(358, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:35', 'Entry', 'DOOR', 'granted'),
+(359, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:41', 'Exit', 'POWER', 'granted'),
+(360, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:43', 'Entry', 'POWER', 'granted'),
+(361, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:45', 'Exit', 'DOOR', 'granted'),
+(362, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:49', 'Entry', 'POWER', 'granted'),
+(363, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:51', 'Exit', 'DOOR', 'granted'),
+(364, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:54', 'Entry', 'POWER', 'granted'),
+(365, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:57', 'Exit', 'DOOR', 'granted'),
+(366, NULL, '51EACD17', 1, NULL, '2026-03-27 23:11:59', 'Entry', 'POWER', 'granted'),
+(367, NULL, '51EACD17', 1, NULL, '2026-03-27 23:12:03', 'Exit', 'POWER', 'granted'),
+(368, NULL, '51EACD17', 1, NULL, '2026-03-27 23:12:06', 'Entry', 'POWER', 'granted'),
+(369, NULL, '51EACD17', 1, NULL, '2026-03-27 23:12:11', 'Exit', 'POWER', 'granted'),
+(370, NULL, '51EACD17', 1, NULL, '2026-03-27 23:52:46', 'Entry', 'POWER', 'granted'),
+(371, NULL, '51EACD17', 1, NULL, '2026-03-27 23:52:53', 'Exit', 'POWER', 'granted'),
+(372, NULL, '51EACD17', 1, NULL, '2026-03-27 23:52:57', 'Entry', 'POWER', 'granted'),
+(373, NULL, '51EACD17', 1, NULL, '2026-03-27 23:53:05', 'Exit', 'POWER', 'granted'),
+(374, NULL, '51EACD17', 1, NULL, '2026-03-27 23:53:08', 'Entry', 'POWER', 'granted'),
+(375, NULL, '51EACD17', 1, NULL, '2026-03-27 23:53:12', 'Exit', 'POWER', 'granted'),
+(376, NULL, '51EACD17', 1, NULL, '2026-03-27 23:57:05', 'Entry', 'POWER', 'granted'),
+(377, NULL, '51EACD17', 1, NULL, '2026-03-27 23:57:12', 'Exit', 'POWER', 'granted'),
+(378, NULL, '51EACD17', 1, NULL, '2026-03-27 23:57:20', 'Entry', 'POWER', 'granted'),
+(379, NULL, '51EACD17', 1, NULL, '2026-03-27 23:57:30', 'Exit', 'POWER', 'granted'),
+(380, NULL, '51EACD17', 1, NULL, '2026-03-28 00:01:41', 'Entry', 'DOOR', 'granted'),
+(381, NULL, '51EACD17', 1, NULL, '2026-03-28 00:01:51', 'Exit', 'DOOR', 'granted'),
+(382, NULL, '51EACD17', 1, NULL, '2026-03-28 00:01:56', 'Entry', 'DOOR', 'granted'),
+(383, NULL, '51EACD17', 1, NULL, '2026-03-28 00:02:03', 'Exit', 'DOOR', 'granted'),
+(384, NULL, '51EACD17', 1, NULL, '2026-03-28 02:41:23', 'Entry', 'DOOR', 'granted'),
+(385, NULL, '51EACD17', 1, NULL, '2026-03-28 02:41:27', 'Exit', 'DOOR', 'granted'),
+(386, NULL, '51EACD17', 1, NULL, '2026-03-28 02:41:28', 'Entry', 'POWER', 'granted'),
+(387, NULL, '51EACD17', 1, NULL, '2026-03-28 02:41:32', 'Exit', 'POWER', 'granted'),
+(388, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:19:12', 'Exit', 'POWER', 'granted'),
+(389, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:19:21', 'Entry', 'POWER', 'granted'),
+(390, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:19:33', 'Exit', 'POWER', 'granted'),
+(391, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:19:49', 'Entry', 'DOOR', 'granted'),
+(392, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:19:56', 'Exit', 'DOOR', 'granted'),
+(393, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:20:16', 'Entry', 'POWER', 'granted'),
+(394, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:20:28', 'Exit', 'POWER', 'granted'),
+(395, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:20:36', 'Entry', 'POWER', 'granted'),
+(396, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:20:42', 'Exit', 'POWER', 'granted'),
+(397, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:21:03', 'Entry', 'POWER', 'granted'),
+(398, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:21:11', 'Exit', 'POWER', 'granted'),
+(399, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:21:22', 'Entry', 'POWER', 'granted'),
+(400, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:21:28', 'Exit', 'POWER', 'granted'),
+(401, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:09', 'Entry', 'POWER', 'granted'),
+(402, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:13', 'Exit', 'POWER', 'granted'),
+(403, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:16', 'Entry', 'DOOR', 'granted'),
+(404, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:23', 'Exit', 'DOOR', 'granted'),
+(405, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:27', 'Entry', 'DOOR', 'granted'),
+(406, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:31', 'Exit', 'DOOR', 'granted'),
+(407, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:38', 'Entry', 'DOOR', 'granted'),
+(408, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:42', 'Exit', 'DOOR', 'granted'),
+(409, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:50', 'Entry', 'POWER', 'granted'),
+(410, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:22:54', 'Exit', 'POWER', 'granted'),
+(411, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:23:12', 'Entry', 'DOOR', 'granted'),
+(412, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:23:22', 'Exit', 'POWER', 'granted'),
+(413, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:23:27', 'Entry', 'POWER', 'granted'),
+(414, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:23:32', 'Exit', 'POWER', 'granted'),
+(415, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:23:36', 'Entry', 'DOOR', 'granted'),
+(416, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:24:19', 'Exit', 'DOOR', 'granted'),
+(417, NULL, '61DE6A05', 1, NULL, '2026-03-28 09:24:40', 'Entry', 'DOOR', 'denied'),
+(418, NULL, '61DE6A05', 1, NULL, '2026-03-28 09:24:46', 'Entry', 'POWER', 'denied'),
+(419, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:24:59', 'Entry', 'DOOR', 'granted'),
+(420, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:25:28', 'Exit', 'POWER', 'granted'),
+(421, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:25:31', 'Entry', 'POWER', 'granted'),
+(422, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:25:35', 'Exit', 'POWER', 'granted'),
+(423, NULL, '9DEDD106', 1, NULL, '2026-03-28 09:26:34', 'Entry', 'DOOR', 'granted'),
+(424, 28, '61DE6A05', 1, NULL, '2026-03-28 10:44:55', 'Entry', 'DOOR', 'granted'),
+(425, 28, '61DE6A05', 1, NULL, '2026-03-28 10:46:33', 'Exit', 'POWER', 'denied'),
+(426, 26, '42193D05', 1, NULL, '2026-03-28 10:50:25', 'Entry', 'DOOR', 'granted'),
+(427, 26, '42193D05', 1, NULL, '2026-03-28 10:50:37', 'Exit', 'POWER', 'granted'),
+(428, 26, '42193D05', 1, NULL, '2026-03-28 10:50:41', 'Entry', 'POWER', 'granted'),
+(429, 26, '42193D05', 1, NULL, '2026-03-28 10:53:33', 'Exit', 'POWER', 'denied'),
+(430, 24, '9DEDD106', 1, NULL, '2026-03-28 10:54:18', 'Entry', 'POWER', 'granted'),
+(431, 24, '9DEDD106', 1, NULL, '2026-03-28 10:54:23', 'Exit', 'POWER', 'granted'),
+(432, 24, '9DEDD106', 1, NULL, '2026-03-28 11:05:53', 'Entry', 'DOOR', 'granted'),
+(433, 24, '9DEDD106', 1, NULL, '2026-03-28 11:05:59', 'Exit', 'POWER', 'granted'),
+(434, 24, '9DEDD106', 1, NULL, '2026-03-28 11:06:02', 'Entry', 'POWER', 'granted'),
+(435, 24, '9DEDD106', 1, NULL, '2026-03-28 11:06:11', 'Exit', 'POWER', 'granted'),
+(436, 26, '42193D05', 1, NULL, '2026-04-10 12:53:26', 'Exit', 'DOOR', 'denied'),
+(437, 26, '42193D05', 1, NULL, '2026-04-10 12:53:29', 'Exit', 'DOOR', 'denied'),
+(438, 28, '61DE6A05', 1, NULL, '2026-04-10 12:53:31', 'Exit', 'DOOR', 'denied'),
+(439, NULL, 'A4123D05', 1, NULL, '2026-04-10 12:53:54', 'Entry', 'DOOR', 'denied'),
+(440, NULL, '9DEDD106', 1, NULL, '2026-04-10 12:53:56', 'Entry', 'DOOR', 'denied'),
+(441, 28, '61DE6A05', 1, NULL, '2026-04-10 12:55:17', 'Exit', 'DOOR', 'denied'),
+(442, 28, '61DE6A05', 1, NULL, '2026-04-10 12:58:55', 'Exit', 'DOOR', 'denied'),
+(443, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:02', 'Exit', 'DOOR', 'denied'),
+(444, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:05', 'Exit', 'DOOR', 'denied'),
+(445, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:10', 'Exit', 'DOOR', 'denied'),
+(446, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:13', 'Exit', 'DOOR', 'denied'),
+(447, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:16', 'Exit', 'DOOR', 'denied'),
+(448, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:26', 'Exit', 'DOOR', 'denied'),
+(449, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:35', 'Exit', 'DOOR', 'denied'),
+(450, 28, '61DE6A05', 1, NULL, '2026-04-10 12:59:42', 'Exit', 'DOOR', 'denied'),
+(451, NULL, '9DEDD106', 1, NULL, '2026-04-10 12:59:56', 'Entry', 'POWER', 'denied'),
+(452, 28, '61DE6A05', 1, NULL, '2026-04-10 13:00:02', 'Exit', 'DOOR', 'denied'),
+(453, 28, '61DE6A05', 1, NULL, '2026-04-10 13:00:23', 'Exit', 'DOOR', 'denied'),
+(454, 24, '9DEDD106', 1, NULL, '2026-04-10 13:00:28', 'Entry', 'POWER', 'granted'),
+(455, 24, '9DEDD106', 1, NULL, '2026-04-10 13:00:40', 'Exit', 'POWER', 'granted'),
+(456, 24, '9DEDD106', 1, NULL, '2026-04-10 13:00:43', 'Entry', 'POWER', 'granted'),
+(457, 28, '61DE6A05', 1, NULL, '2026-04-10 13:00:47', 'Exit', 'DOOR', 'denied'),
+(458, 24, '9DEDD106', 1, NULL, '2026-04-10 13:00:50', 'Exit', 'DOOR', 'granted'),
+(459, 24, '9DEDD106', 1, NULL, '2026-04-10 13:00:55', 'Entry', 'DOOR', 'granted'),
+(460, 24, '9DEDD106', 1, NULL, '2026-04-10 13:01:08', 'Exit', 'DOOR', 'granted'),
+(461, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:12', 'Exit', 'DOOR', 'denied'),
+(462, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:16', 'Exit', 'DOOR', 'denied'),
+(463, 24, '9DEDD106', 1, NULL, '2026-04-10 13:01:18', 'Entry', 'POWER', 'granted'),
+(464, 24, '9DEDD106', 1, NULL, '2026-04-10 13:01:24', 'Exit', 'POWER', 'granted'),
+(465, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:44', 'Exit', 'DOOR', 'denied'),
+(466, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:47', 'Exit', 'DOOR', 'denied'),
+(467, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:49', 'Exit', 'DOOR', 'denied'),
+(468, 28, '61DE6A05', 1, NULL, '2026-04-10 13:01:53', 'Exit', 'DOOR', 'denied'),
+(469, 28, '61DE6A05', 1, NULL, '2026-04-10 13:02:01', 'Exit', 'DOOR', 'denied'),
+(470, 28, '61DE6A05', 1, NULL, '2026-04-10 13:02:15', 'Exit', 'DOOR', 'denied'),
+(471, 28, '61DE6A05', 1, NULL, '2026-04-10 13:02:25', 'Exit', 'DOOR', 'denied'),
+(472, 28, '61DE6A05', 1, NULL, '2026-04-10 13:03:44', 'Exit', 'DOOR', 'denied'),
+(473, 28, '61DE6A05', 1, 34, '2026-04-10 13:04:03', 'Exit', 'DOOR', 'granted'),
+(474, 26, '42193D05', 1, NULL, '2026-04-10 13:04:17', 'Exit', 'DOOR', 'denied'),
+(475, 26, '42193D05', 1, NULL, '2026-04-10 13:04:20', 'Exit', 'DOOR', 'denied'),
+(476, 26, '42193D05', 1, NULL, '2026-04-10 13:04:29', 'Exit', 'DOOR', 'denied'),
+(477, 26, '42193D05', 1, NULL, '2026-04-10 13:04:40', 'Exit', 'DOOR', 'granted'),
+(478, 26, '42193D05', 1, NULL, '2026-04-10 13:04:44', 'Entry', 'POWER', 'granted'),
+(479, 28, '61DE6A05', 1, NULL, '2026-04-10 13:05:47', 'Entry', 'POWER', 'denied'),
+(480, 26, '42193D05', 1, NULL, '2026-04-10 13:05:51', 'Exit', 'POWER', 'granted'),
+(481, 24, '9DEDD106', 1, NULL, '2026-04-10 13:06:28', 'Entry', 'POWER', 'granted'),
+(482, 24, '9DEDD106', 1, NULL, '2026-04-10 13:06:30', 'Exit', 'DOOR', 'granted'),
+(483, 24, '9DEDD106', 1, NULL, '2026-04-10 13:06:39', 'Entry', 'DOOR', 'granted'),
+(484, 24, '9DEDD106', 1, NULL, '2026-04-10 13:06:41', 'Exit', 'POWER', 'granted'),
+(485, 26, '42193D05', 1, 34, '2026-04-10 13:08:42', 'Entry', 'POWER', 'granted'),
+(486, 26, '42193D05', 1, NULL, '2026-04-10 13:08:45', 'Exit', 'DOOR', 'denied'),
+(487, 26, '42193D05', 1, NULL, '2026-04-10 13:08:48', 'Exit', 'DOOR', 'denied'),
+(488, 26, '42193D05', 1, NULL, '2026-04-10 13:08:54', 'Exit', 'DOOR', 'denied'),
+(489, 26, '42193D05', 1, 34, '2026-04-10 13:08:54', 'Exit', 'POWER', 'granted'),
+(490, 26, '42193D05', 1, NULL, '2026-04-10 13:08:57', 'Entry', 'DOOR', 'denied'),
+(491, 26, '42193D05', 1, NULL, '2026-04-10 13:09:00', 'Entry', 'DOOR', 'denied'),
+(492, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:04', 'Entry', 'DOOR', 'granted'),
+(493, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:07', 'Exit', 'POWER', 'granted'),
+(494, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:09', 'Entry', 'POWER', 'granted'),
+(495, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:14', 'Exit', 'POWER', 'granted'),
+(496, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:16', 'Entry', 'POWER', 'granted'),
+(497, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:20', 'Exit', 'POWER', 'granted'),
+(498, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:22', 'Entry', 'POWER', 'granted'),
+(499, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:26', 'Exit', 'POWER', 'granted'),
+(500, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:28', 'Entry', 'POWER', 'granted'),
+(501, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:32', 'Exit', 'POWER', 'granted'),
+(502, 24, '9DEDD106', 1, NULL, '2026-04-10 13:09:36', 'Entry', 'DOOR', 'granted'),
+(503, 26, '42193D05', 1, NULL, '2026-04-10 13:09:42', 'Entry', 'DOOR', 'denied'),
+(504, 26, '42193D05', 1, NULL, '2026-04-10 13:09:45', 'Entry', 'DOOR', 'denied'),
+(505, 26, '42193D05', 1, 34, '2026-04-10 13:10:01', 'Entry', 'POWER', 'granted'),
+(506, 26, '42193D05', 1, 34, '2026-04-10 13:10:05', 'Exit', 'POWER', 'granted'),
+(507, 26, '42193D05', 1, 34, '2026-04-10 13:10:08', 'Entry', 'POWER', 'granted'),
+(508, 24, '9DEDD106', 1, NULL, '2026-04-10 13:11:08', 'Exit', 'POWER', 'granted'),
+(509, 24, '9DEDD106', 1, NULL, '2026-04-10 13:11:15', 'Entry', 'POWER', 'granted'),
+(510, 24, '9DEDD106', 1, NULL, '2026-04-10 13:11:22', 'Exit', 'POWER', 'granted'),
+(511, 26, '42193D05', 1, 34, '2026-04-10 13:11:39', 'Exit', 'POWER', 'granted'),
+(512, 26, '42193D05', 1, 34, '2026-04-10 13:11:41', 'Entry', 'POWER', 'granted'),
+(513, NULL, '42193D05', 1, NULL, '2026-04-10 13:12:05', 'Entry', 'POWER', 'denied'),
+(514, 28, '61DE6A05', 1, 34, '2026-04-10 13:14:31', 'Entry', 'DOOR', 'granted'),
+(515, 28, '61DE6A05', 1, 34, '2026-04-10 13:14:44', 'Exit', 'DOOR', 'granted'),
+(516, NULL, '42193D05', 1, NULL, '2026-04-10 13:15:14', 'Entry', 'DOOR', 'denied'),
+(517, NULL, '42193D05', 1, NULL, '2026-04-10 13:15:18', 'Entry', 'DOOR', 'denied'),
+(518, NULL, '42193D05', 1, NULL, '2026-04-10 13:15:24', 'Entry', 'DOOR', 'denied'),
+(519, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:05', 'Entry', 'DOOR', 'granted'),
+(520, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:08', 'Exit', 'POWER', 'granted'),
+(521, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:14', 'Entry', 'DOOR', 'granted'),
+(522, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:50', 'Exit', 'POWER', 'granted'),
+(523, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:52', 'Entry', 'POWER', 'granted'),
+(524, 24, '9DEDD106', 1, NULL, '2026-04-10 13:16:59', 'Exit', 'POWER', 'granted'),
+(525, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:01', 'Entry', 'POWER', 'granted'),
+(526, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:18', 'Exit', 'POWER', 'granted'),
+(527, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:21', 'Entry', 'POWER', 'granted'),
+(528, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:25', 'Exit', 'DOOR', 'granted'),
+(529, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:43', 'Entry', 'POWER', 'granted'),
+(530, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:47', 'Exit', 'POWER', 'granted'),
+(531, 24, '9DEDD106', 1, NULL, '2026-04-10 13:17:51', 'Entry', 'DOOR', 'granted'),
+(532, 26, '42193D05', 1, NULL, '2026-04-10 13:18:20', 'Exit', 'DOOR', 'denied'),
+(533, 26, '42193D05', 1, 34, '2026-04-10 13:18:23', 'Exit', 'POWER', 'granted'),
+(534, 26, '42193D05', 1, 34, '2026-04-10 13:18:26', 'Entry', 'POWER', 'granted'),
+(535, 28, '61DE6A05', 1, 34, '2026-04-10 13:18:47', 'Entry', 'DOOR', 'granted'),
+(536, NULL, '42193D05', 1, NULL, '2026-04-10 13:18:55', 'Entry', 'DOOR', 'denied'),
+(537, NULL, '42193D05', 1, NULL, '2026-04-10 13:18:58', 'Entry', 'DOOR', 'denied'),
+(538, NULL, '42193D05', 1, NULL, '2026-04-10 13:19:03', 'Entry', 'DOOR', 'denied'),
+(539, NULL, '42193D05', 1, NULL, '2026-04-10 13:19:17', 'Entry', 'DOOR', 'denied');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `access_policies`
+--
+
+CREATE TABLE `access_policies` (
+  `role` varchar(50) DEFAULT NULL,
+  `device_type` varchar(20) DEFAULT NULL,
+  `requires_schedule` tinyint(4) DEFAULT NULL,
+  `can_override_shutdown` tinyint(4) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `access_policies`
+--
+
+INSERT INTO `access_policies` (`role`, `device_type`, `requires_schedule`, `can_override_shutdown`) VALUES
+('Admin', '*', 0, 1),
+('Faculty', 'POWER', 1, 1),
+('Student', 'DOOR', 1, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `admin`
+--
+
+CREATE TABLE `admin` (
+  `Admin_id` int(11) NOT NULL,
+  `F_name` varchar(255) DEFAULT NULL,
+  `L_name` varchar(255) DEFAULT NULL,
+  `Username` varchar(255) NOT NULL,
+  `Password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `admin`
+--
+
+INSERT INTO `admin` (`Admin_id`, `F_name`, `L_name`, `Username`, `Password`) VALUES
+(1, 'Jonathan', 'Mina', 'admin', '$2y$10$.OhR22bXjH76rOtF7RuwguvyTkk7hwzLdoQeRH2cTo2pMPc.R./wi'),
+(2, 'John Rey', 'Olivera', 'oliber', '$2y$10$whvEbu732TlhLEynO6RsBetBeefG7E4xS04qkOD.tKtGdtPiYOuLC');
 
 -- --------------------------------------------------------
 
@@ -463,16 +639,20 @@ CREATE TABLE `classrooms` (
   `Room_code` varchar(50) NOT NULL,
   `Status` enum('Occupied','Unoccupied') DEFAULT 'Unoccupied',
   `Classroom_type` varchar(255) DEFAULT NULL,
-  `Capacity` int(11) DEFAULT NULL
+  `Capacity` int(11) DEFAULT NULL,
+  `FLOOR` varchar(55) NOT NULL,
+  `grace_period` int(11) DEFAULT 15,
+  `allow_extension` tinyint(1) DEFAULT 1,
+  `double_tap_exit` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `classrooms`
 --
 
-INSERT INTO `classrooms` (`Room_id`, `Room_code`, `Status`, `Classroom_type`, `Capacity`) VALUES
-(1, 'ROOM101', 'Occupied', 'CLASSROOM', 50),
-(2, 'ROOM102', 'Unoccupied', 'CLASSROOM', 30);
+INSERT INTO `classrooms` (`Room_id`, `Room_code`, `Status`, `Classroom_type`, `Capacity`, `FLOOR`, `grace_period`, `allow_extension`, `double_tap_exit`) VALUES
+(1, 'ROOM101', 'Unoccupied', 'CLASSROOM', 50, '2ND Floor', 0, 0, 0),
+(2, 'ROOM102', 'Unoccupied', 'CLASSROOM', 30, '1st Floor', 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -491,12 +671,90 @@ CREATE TABLE `course_section` (
 
 INSERT INTO `course_section` (`CourseSection_id`, `CourseSection`) VALUES
 (2, 'BSCS 1-21'),
+(158, 'BSCS 2-11'),
+(154, 'BSCS-2A'),
+(159, 'BSIS 1-31'),
 (1, 'BSIT 1-11'),
+(144, 'BSIT 1-21'),
+(153, 'BSIT 1-31'),
 (3, 'BSIT 2-11'),
+(156, 'BSIT 3-11'),
+(157, 'BSIT 3-21'),
+(160, 'BSIT 4-11'),
+(155, 'BSIT-1B'),
 (111, 'BSOA 1-11'),
 (121, 'BSOA 1-21'),
 (131, 'BSOA 1-31'),
 (141, 'BSOA 1-41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `devices`
+--
+
+CREATE TABLE `devices` (
+  `device_id` int(11) NOT NULL,
+  `mac_address` varchar(17) NOT NULL,
+  `room_id` int(11) NOT NULL,
+  `device_type` enum('DOOR','POWER') DEFAULT 'DOOR',
+  `last_seen` datetime DEFAULT current_timestamp(),
+  `status` enum('Online','Offline') DEFAULT 'Offline'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `devices`
+--
+
+INSERT INTO `devices` (`device_id`, `mac_address`, `room_id`, `device_type`, `last_seen`, `status`) VALUES
+(0, 'AD:AD:AD:AD:AD:AD', 4, 'DOOR', '2026-02-02 14:35:21', 'Offline'),
+(1, 'D4:E9:F4:65:F5:1C', 1, 'POWER', '2026-04-10 13:19:14', 'Offline'),
+(2, '70:B8:F6:28:30:84', 1, 'DOOR', '2026-04-10 13:19:20', 'Offline');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `individual_permissions`
+--
+
+CREATE TABLE `individual_permissions` (
+  `Permission_id` int(11) NOT NULL,
+  `User_id` int(11) NOT NULL,
+  `Schedule_id` int(11) NOT NULL,
+  `Reason` varchar(255) DEFAULT 'Irregular/Working Student',
+  `Created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `last_scan`
+--
+
+CREATE TABLE `last_scan` (
+  `id` int(11) NOT NULL DEFAULT 1,
+  `uid` varchar(50) NOT NULL,
+  `scanned_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `last_scan`
+--
+
+INSERT INTO `last_scan` (`id`, `uid`, `scanned_at`) VALUES
+(1, 'NONE', '2026-03-11 07:20:33');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `rfid_buffer`
+--
+
+CREATE TABLE `rfid_buffer` (
+  `id` int(11) NOT NULL,
+  `rfid_tag` varchar(50) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -533,23 +791,16 @@ CREATE TABLE `schedule` (
   `Faculty_id` int(11) NOT NULL,
   `Day` enum('Mon','Tue','Wed','Thu','Fri','Sat','Sun') NOT NULL,
   `Start_time` time NOT NULL,
-  `End_time` time NOT NULL
+  `End_time` time NOT NULL,
+  `is_deleted` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `schedule`
 --
 
-INSERT INTO `schedule` (`Schedule_id`, `Subject_id`, `Room_id`, `Faculty_id`, `Day`, `Start_time`, `End_time`) VALUES
-(1, 1, 2, 6, 'Fri', '10:00:00', '18:00:00'),
-(2, 1, 1, 6, 'Mon', '10:00:00', '12:00:00'),
-(3, 2, 1, 8, 'Fri', '10:00:00', '18:00:00'),
-(4, 3, 2, 6, 'Wed', '16:00:00', '19:00:00'),
-(5, 4, 1, 6, 'Tue', '13:00:00', '16:00:00'),
-(6, 5, 1, 6, 'Fri', '18:00:00', '21:00:00'),
-(7, 6, 1, 6, 'Fri', '15:00:00', '18:00:00'),
-(8, 7, 2, 7, 'Mon', '07:00:00', '10:00:00'),
-(9, 8, 2, 7, 'Mon', '13:00:00', '16:00:00');
+INSERT INTO `schedule` (`Schedule_id`, `Subject_id`, `Room_id`, `Faculty_id`, `Day`, `Start_time`, `End_time`, `is_deleted`) VALUES
+(34, 14, 1, 26, 'Fri', '10:19:00', '23:19:00', 1);
 
 -- --------------------------------------------------------
 
@@ -568,15 +819,10 @@ CREATE TABLE `schedule_access` (
 --
 
 INSERT INTO `schedule_access` (`Rule_id`, `Schedule_id`, `CourseSection_id`) VALUES
-(1, 1, 2),
-(2, 2, 2),
-(3, 3, 1),
-(4, 4, 2),
-(5, 5, 2),
-(6, 6, 131),
-(7, 7, 131),
-(8, 8, 131),
-(9, 9, 131);
+(197, 34, 158),
+(198, 34, 1),
+(199, 34, 158),
+(200, 34, 1);
 
 -- --------------------------------------------------------
 
@@ -597,12 +843,39 @@ CREATE TABLE `subject` (
 INSERT INTO `subject` (`Subject_id`, `Code`, `Description`) VALUES
 (1, 'IT101', 'Introduction to Information Technology'),
 (2, 'ITP311', 'Human Computer Interaction'),
-(3, 'GE304', 'SCIENCE TECHNOLOGYY ENGINEERING'),
-(4, 'asdawdasdawd ajshdgawj ', 'awdasd'),
+(3, 'GE304', 'Science Technology Engineering'),
 (5, 'OAC310', 'Business Law'),
 (6, 'OAE301', 'Human Anatomy and Physiology'),
 (7, 'GEE303', 'GE Elective 3- Business Logic'),
-(8, 'OAC309', 'Customer Relations');
+(8, 'OAC309', 'Customer Relations'),
+(13, 'IT202 Intergrative Programming', 'IT202 Intergrative Programming'),
+(14, 'ENGL101', 'English Composition'),
+(15, 'IT311', 'Integrative Programming'),
+(16, 'CS202', 'Data Structures'),
+(17, 'NET101', 'Networking 1'),
+(18, 'IT412', 'Capstone Project 1'),
+(19, 'SYS101', 'System Admin'),
+(20, 'HUM102', 'Ethics');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_settings`
+--
+
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `system_settings`
+--
+
+INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES
+('global_allow_extension', '0'),
+('global_double_tap', '0'),
+('global_grace_period', '1');
 
 -- --------------------------------------------------------
 
@@ -616,7 +889,7 @@ CREATE TABLE `users` (
   `F_name` varchar(100) NOT NULL,
   `L_name` varchar(100) NOT NULL,
   `CourseSection_id` int(11) DEFAULT NULL,
-  `Role` enum('Student','Faculty','Admin') DEFAULT 'Student',
+  `Role` enum('Student','Faculty','Admin','Cleaning','Security') NOT NULL,
   `Status` enum('Active','Inactive') DEFAULT 'Active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -625,12 +898,22 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`User_id`, `Rfid_tag`, `F_name`, `L_name`, `CourseSection_id`, `Role`, `Status`) VALUES
-(1, '44 22 95 04', 'John', 'Doe', 1, 'Student', 'Active'),
-(2, 'D3 CB B1 38', 'Jane', 'Smith', 2, 'Student', 'Active'),
-(3, 'STU3944', 'Mark', 'Reyes', 3, 'Student', 'Active'),
-(6, 'FAC001', 'Anna', 'Cruz', NULL, 'Faculty', 'Active'),
-(7, 'FAC002', 'Paul', 'Santos', NULL, 'Faculty', 'Active'),
-(8, '61 DE 6A 05', 'Michael', 'Tan', NULL, 'Admin', 'Active');
+(24, '9DEDD106', 'Jonathan', 'Mina', NULL, 'Admin', 'Active'),
+(26, '42193D05', 'Rey Vergel', 'Abella', NULL, 'Faculty', 'Inactive'),
+(28, '61DE6A05', 'Kristel', 'Ladot', 1, 'Student', 'Active'),
+(30, '435345534', 'BRO', 'DY', NULL, 'Cleaning', 'Active'),
+(31, '986674', 'SIR', 'CHIEF', NULL, 'Security', 'Active'),
+(56, 'RFID002', 'Jane', 'Smith', NULL, 'Faculty', 'Active'),
+(57, 'RFID003', 'Mike', 'Johnson', NULL, 'Cleaning', 'Active'),
+(58, 'RFID004', 'Sarah', 'Williams', NULL, 'Security', 'Active'),
+(59, 'RFID005', 'Admin', 'User', NULL, 'Admin', 'Active'),
+(60, '42342', 'ray', 'berhel', NULL, 'Admin', 'Active'),
+(75, 'RFID443001', 'sal', 'muel', 1, 'Student', 'Active'),
+(76, 'RFID45345002', 'john', 'rey', NULL, 'Faculty', 'Active'),
+(77, 'RFID076503', 'gio', 'rge', NULL, 'Cleaning', 'Active'),
+(78, 'RFID058604', 'ver', 'hel', NULL, 'Security', 'Active'),
+(79, 'RFID09805', 'kris', 'tel', NULL, 'Admin', 'Active'),
+(80, '665', 'rayforc', 'sssss', NULL, 'Admin', 'Active');
 
 --
 -- Indexes for dumped tables
@@ -643,7 +926,14 @@ ALTER TABLE `access_log`
   ADD PRIMARY KEY (`Log_id`),
   ADD KEY `User_id` (`User_id`),
   ADD KEY `Room_id` (`Room_id`),
-  ADD KEY `Schedule_id` (`Schedule_id`);
+  ADD KEY `Schedule_id` (`Schedule_id`),
+  ADD KEY `Rfid_tag` (`Rfid_tag`);
+
+--
+-- Indexes for table `admin`
+--
+ALTER TABLE `admin`
+  ADD PRIMARY KEY (`Admin_id`);
 
 --
 -- Indexes for table `classrooms`
@@ -658,6 +948,34 @@ ALTER TABLE `classrooms`
 ALTER TABLE `course_section`
   ADD PRIMARY KEY (`CourseSection_id`),
   ADD UNIQUE KEY `CourseSection` (`CourseSection`);
+
+--
+-- Indexes for table `devices`
+--
+ALTER TABLE `devices`
+  ADD PRIMARY KEY (`device_id`),
+  ADD UNIQUE KEY `mac_address` (`mac_address`),
+  ADD KEY `room_id` (`room_id`);
+
+--
+-- Indexes for table `individual_permissions`
+--
+ALTER TABLE `individual_permissions`
+  ADD PRIMARY KEY (`Permission_id`),
+  ADD KEY `User_id` (`User_id`),
+  ADD KEY `Schedule_id` (`Schedule_id`);
+
+--
+-- Indexes for table `last_scan`
+--
+ALTER TABLE `last_scan`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `rfid_buffer`
+--
+ALTER TABLE `rfid_buffer`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `rfid_reader`
@@ -691,12 +1009,19 @@ ALTER TABLE `subject`
   ADD UNIQUE KEY `Code` (`Code`);
 
 --
+-- Indexes for table `system_settings`
+--
+ALTER TABLE `system_settings`
+  ADD PRIMARY KEY (`setting_key`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`User_id`),
   ADD UNIQUE KEY `Rfid_tag` (`Rfid_tag`),
-  ADD KEY `CourseSection_id` (`CourseSection_id`);
+  ADD KEY `CourseSection_id` (`CourseSection_id`),
+  ADD KEY `Rfid_tag_2` (`Rfid_tag`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -706,19 +1031,37 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `access_log`
 --
 ALTER TABLE `access_log`
-  MODIFY `Log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=409;
+  MODIFY `Log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=540;
+
+--
+-- AUTO_INCREMENT for table `admin`
+--
+ALTER TABLE `admin`
+  MODIFY `Admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `classrooms`
 --
 ALTER TABLE `classrooms`
-  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `Room_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `course_section`
 --
 ALTER TABLE `course_section`
-  MODIFY `CourseSection_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=142;
+  MODIFY `CourseSection_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=161;
+
+--
+-- AUTO_INCREMENT for table `individual_permissions`
+--
+ALTER TABLE `individual_permissions`
+  MODIFY `Permission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT for table `rfid_buffer`
+--
+ALTER TABLE `rfid_buffer`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `rfid_reader`
@@ -730,25 +1073,25 @@ ALTER TABLE `rfid_reader`
 -- AUTO_INCREMENT for table `schedule`
 --
 ALTER TABLE `schedule`
-  MODIFY `Schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `Schedule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `schedule_access`
 --
 ALTER TABLE `schedule_access`
-  MODIFY `Rule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `Rule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
 
 --
 -- AUTO_INCREMENT for table `subject`
 --
 ALTER TABLE `subject`
-  MODIFY `Subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `Subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- Constraints for dumped tables
@@ -761,6 +1104,13 @@ ALTER TABLE `access_log`
   ADD CONSTRAINT `fk_access_room` FOREIGN KEY (`Room_id`) REFERENCES `classrooms` (`Room_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_access_schedule` FOREIGN KEY (`Schedule_id`) REFERENCES `schedule` (`Schedule_id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_access_user` FOREIGN KEY (`User_id`) REFERENCES `users` (`User_id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `individual_permissions`
+--
+ALTER TABLE `individual_permissions`
+  ADD CONSTRAINT `individual_permissions_ibfk_1` FOREIGN KEY (`User_id`) REFERENCES `users` (`User_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `individual_permissions_ibfk_2` FOREIGN KEY (`Schedule_id`) REFERENCES `schedule` (`Schedule_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `rfid_reader`

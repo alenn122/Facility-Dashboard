@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 10, 2026 at 11:39 AM
+-- Generation Time: Apr 11, 2026 at 06:22 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -890,30 +890,32 @@ CREATE TABLE `users` (
   `L_name` varchar(100) NOT NULL,
   `CourseSection_id` int(11) DEFAULT NULL,
   `Role` enum('Student','Faculty','Admin','Cleaning','Security') NOT NULL,
-  `Status` enum('Active','Inactive') DEFAULT 'Active'
+  `Status` enum('Active','Inactive','Archived') NOT NULL DEFAULT 'Active',
+  `archived_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`User_id`, `Rfid_tag`, `F_name`, `L_name`, `CourseSection_id`, `Role`, `Status`) VALUES
-(24, '9DEDD106', 'Jonathan', 'Mina', NULL, 'Admin', 'Active'),
-(26, '42193D05', 'Rey Vergel', 'Abella', NULL, 'Faculty', 'Inactive'),
-(28, '61DE6A05', 'Kristel', 'Ladot', 1, 'Student', 'Active'),
-(30, '435345534', 'BRO', 'DY', NULL, 'Cleaning', 'Active'),
-(31, '986674', 'SIR', 'CHIEF', NULL, 'Security', 'Active'),
-(56, 'RFID002', 'Jane', 'Smith', NULL, 'Faculty', 'Active'),
-(57, 'RFID003', 'Mike', 'Johnson', NULL, 'Cleaning', 'Active'),
-(58, 'RFID004', 'Sarah', 'Williams', NULL, 'Security', 'Active'),
-(59, 'RFID005', 'Admin', 'User', NULL, 'Admin', 'Active'),
-(60, '42342', 'ray', 'berhel', NULL, 'Admin', 'Active'),
-(75, 'RFID443001', 'sal', 'muel', 1, 'Student', 'Active'),
-(76, 'RFID45345002', 'john', 'rey', NULL, 'Faculty', 'Active'),
-(77, 'RFID076503', 'gio', 'rge', NULL, 'Cleaning', 'Active'),
-(78, 'RFID058604', 'ver', 'hel', NULL, 'Security', 'Active'),
-(79, 'RFID09805', 'kris', 'tel', NULL, 'Admin', 'Active'),
-(80, '665', 'rayforc', 'sssss', NULL, 'Admin', 'Active');
+INSERT INTO `users` (`User_id`, `Rfid_tag`, `F_name`, `L_name`, `CourseSection_id`, `Role`, `Status`, `archived_date`) VALUES
+(24, '9DEDD106', 'Jonathan', 'Mina', NULL, 'Admin', 'Active', NULL),
+(26, '42193D05', 'Rey Vergel', 'Abella', NULL, 'Faculty', 'Active', '2026-04-11 23:07:17'),
+(28, '61DE6A05', 'Kristel', 'Ladot', 1, 'Student', 'Active', NULL),
+(30, '435345534', 'BRO', 'DY', NULL, 'Cleaning', 'Active', NULL),
+(31, '986674', 'SIR', 'CHIEF', NULL, 'Security', 'Active', NULL),
+(56, 'RFID002', 'Jane', 'Smith', NULL, 'Faculty', 'Active', NULL),
+(57, 'RFID003', 'Mike', 'Johnson', NULL, 'Cleaning', 'Active', NULL),
+(58, 'RFID004', 'Sarah', 'Williams', NULL, 'Security', 'Active', NULL),
+(59, 'RFID005', 'Admin', 'User', NULL, 'Admin', 'Active', NULL),
+(60, '42342', 'ray', 'berhel', NULL, 'Admin', 'Archived', '2026-04-12 00:10:30'),
+(75, 'RFID443001', 'sal', 'muel', 1, 'Student', 'Archived', '2026-04-12 00:10:30'),
+(76, 'RFID45345002', 'john', 'rey', NULL, 'Faculty', 'Active', NULL),
+(77, 'RFID076503', 'gio', 'rge', NULL, 'Cleaning', 'Active', NULL),
+(78, 'RFID058604', 'ver', 'hel', NULL, 'Security', 'Archived', '2026-04-12 00:10:30'),
+(79, 'RFID09805', 'kris', 'tel', NULL, 'Admin', 'Active', '2026-04-12 00:04:28'),
+(80, '665', 'rayforc', 'sssss', NULL, 'Admin', 'Archived', '2026-04-12 00:10:30'),
+(81, '32446565', 'eya', 'mi', 121, 'Student', 'Active', NULL);
 
 --
 -- Indexes for dumped tables
@@ -1091,7 +1093,7 @@ ALTER TABLE `subject`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
+  MODIFY `User_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- Constraints for dumped tables

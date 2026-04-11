@@ -15,6 +15,7 @@ $admin_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM
 $cleaning_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Cleaning' AND Status='Active'"))['c'];
 $security_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Role='Security' AND Status='Active'"))['c'];
 $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Status='Inactive'"))['c'];
+$archived_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM users WHERE Status='Archived'"))['c'];
 ?>
 
 <!DOCTYPE html>
@@ -42,6 +43,22 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
             background-color: #218838 !important;
             border-color: #1e7e34 !important;
         }
+        .delete-btn {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+        .delete-btn:hover {
+            background-color: #c82333 !important;
+            border-color: #bd2130 !important;
+        }
+        .restore-btn {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+        .permanent-delete-btn {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
         .import-preview-table {
             font-size: 0.85rem;
         }
@@ -63,6 +80,8 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
         .text-orange { color: #fd7e14; }
         .stat-icon-box.bg-indigo-soft { background-color: rgba(102, 16, 242, 0.15); }
         .text-indigo { color: #6610f2; }
+        .stat-icon-box.bg-purple-soft { background-color: rgba(111, 66, 193, 0.15); }
+        .text-purple { color: #6f42c1; }
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -78,6 +97,63 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
         .loading-overlay .spinner-border {
             width: 3rem;
             height: 3rem;
+        }
+        .checkbox-col {
+            width: 40px;
+            text-align: center;
+        }
+        .select-all-checkbox {
+            cursor: pointer;
+        }
+        .bulk-actions-bar {
+            display: none;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .bulk-actions-bar.show {
+            display: flex;
+        }
+        .selected-count {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        .badge-active {
+            background-color: #28a745;
+        }
+        .badge-inactive {
+            background-color: #6c757d;
+        }
+        .badge-archived {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .archive-table {
+            font-size: 0.9rem;
+        }
+        .archive-table th {
+            background-color: #f8f9fa;
+        }
+        .user-row-delete {
+            animation: fadeOut 0.3s ease-out;
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
         }
     </style>
 </head>
@@ -199,21 +275,50 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                 </button>
             </div>
             <div class="col-md-6 col-lg-2">
+                <button class="main-btn w-100 view-archive-btn" id="viewArchiveBtn">
+                    <i class="fas fa-archive me-1"></i> View Archive
+                    <span class="badge bg-light text-dark ms-1" id="archiveCount"><?php echo $archived_count; ?></span>
+                </button>
+            </div>
+            <div class="col-md-6 col-lg-2">
                 <button class="main-btn w-100 excel-btn" id="importExcelBtn">
                     <i class="fas fa-file-excel me-1"></i> Import Excel
                 </button>
             </div>
         </div>
 
-        <!-- Users Container -->
-        <div id="usersContainer">
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading users...</p>
+        <!-- Bulk Actions Bar -->
+        <div id="bulkActionsBar" class="bulk-actions-bar">
+            <div>
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <span id="selectedCount" class="selected-count">0</span> user(s) selected
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm delete-btn" id="bulkDeleteBtn">
+                    <i class="fas fa-trash me-1"></i> Delete Selected
+                </button>
+                <button class="btn btn-sm btn-secondary" id="clearSelectionBtn">
+                    <i class="fas fa-times me-1"></i> Clear
+                </button>
             </div>
         </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading users...</p>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="text-center py-4" style="display: none;">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No users found.</p>
+        </div>
+
+        <!-- Users Container -->
+        <div id="usersContainer"></div>
     </div>
 
     <!-- Add/Edit User Modal -->
@@ -380,6 +485,54 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
         </div>
     </div>
 
+    <!-- Archive Modal -->
+    <div class="modal fade" id="archiveModal" tabindex="-1" aria-labelledby="archiveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-purple text-white">
+                    <h5 class="modal-title" id="archiveModalLabel">
+                        <i class="fas fa-archive me-2"></i> Archived Users
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" id="archiveSearch" class="form-control" placeholder="Search archived users by name, RFID, or role...">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover archive-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>RFID</th>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Role</th>
+                                    <th>Course Section</th>
+                                    <th>Archived Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="archiveTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading archived users...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php $conn->close(); ?>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -387,30 +540,49 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
     <script>
         $(document).ready(function() {
             let allUsers = [];
+            let selectedUsers = new Set();
             
             // Load users on page load
             loadUsers();
             
             function loadUsers() {
-                $('#loadingOverlay').show();
+                $('#loadingSpinner').show();
+                $('#usersContainer').hide();
+                $('#noResults').hide();
+                
                 $.ajax({
                     url: 'users_api.php',
                     type: 'POST',
                     data: { action: 'get_users' },
                     dataType: 'json',
                     success: function(response) {
-                        $('#loadingOverlay').hide();
+                        $('#loadingSpinner').hide();
                         if (response.success) {
                             allUsers = response.users;
                             renderUsers(allUsers);
+                            updateArchiveCount();
                         } else {
                             Swal.fire('Error', response.message, 'error');
                         }
                     },
                     error: function(xhr, status, error) {
-                        $('#loadingOverlay').hide();
+                        $('#loadingSpinner').hide();
                         console.error('Error:', status, error);
                         Swal.fire('Error', 'Failed to load users: ' + status, 'error');
+                    }
+                });
+            }
+            
+            function updateArchiveCount() {
+                $.ajax({
+                    url: 'users_api.php',
+                    type: 'POST',
+                    data: { action: 'get_archived_count' },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#archiveCount').text(response.count);
+                        }
                     }
                 });
             }
@@ -430,41 +602,92 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                 });
                 
                 if (filteredUsers.length === 0) {
-                    $('#usersContainer').html('<div class="text-center py-5"><i class="fas fa-users fa-3x text-muted mb-3"></i><p class="text-muted">No users found</p></div>');
+                    $('#noResults').show();
+                    $('#usersContainer').hide();
+                    $('#bulkActionsBar').removeClass('show');
                     return;
                 }
+                
+                $('#noResults').hide();
+                $('#usersContainer').show();
                 
                 const students = filteredUsers.filter(u => u.Role === 'Student');
                 const faculty = filteredUsers.filter(u => u.Role === 'Faculty');
                 const staff = filteredUsers.filter(u => ['Admin', 'Cleaning', 'Security'].includes(u.Role));
                 
                 let html = `
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input select-all-checkbox" type="checkbox" id="selectAllCheckbox">
+                            <label class="form-check-label fw-bold" for="selectAllCheckbox">
+                                Select All Users
+                            </label>
+                        </div>
+                    </div>
                     <ul class="nav nav-pills mb-4" id="userTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#studentsTab">Students <span class="badge bg-danger ms-1">${students.length}</span></button></li>
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#allTab">All Users <span class="badge bg-danger ms-1">${filteredUsers.length}</span></button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#studentsTab">Students <span class="badge bg-danger ms-1">${students.length}</span></button></li>
                         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#facultyTab">Faculty <span class="badge bg-danger ms-1">${faculty.length}</span></button></li>
                         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#staffTab">Staff <span class="badge bg-danger ms-1">${staff.length}</span></button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#allTab">All Users <span class="badge bg-danger ms-1">${filteredUsers.length}</span></button></li>
                     </ul>
                     <div class="tab-content">
-                        <div class="tab-pane fade show active" id="studentsTab">${renderUserTable(students, 'students')}</div>
+                        <div class="tab-pane fade show active" id="allTab">${renderUserTable(filteredUsers, 'all')}</div>
+                        <div class="tab-pane fade" id="studentsTab">${renderUserTable(students, 'students')}</div>
                         <div class="tab-pane fade" id="facultyTab">${renderUserTable(faculty, 'faculty')}</div>
                         <div class="tab-pane fade" id="staffTab">${renderUserTable(staff, 'staff')}</div>
-                        <div class="tab-pane fade" id="allTab">${renderUserTable(filteredUsers, 'all')}</div>
                     </div>
                 `;
                 
                 $('#usersContainer').html(html);
+                
+                // Update bulk actions bar visibility
+                if (selectedUsers.size > 0) {
+                    $('#bulkActionsBar').addClass('show');
+                    $('#selectedCount').text(selectedUsers.size);
+                } else {
+                    $('#bulkActionsBar').removeClass('show');
+                }
+                
+                // Attach checkbox change events
+                $('.user-checkbox').on('change', function() {
+                    const userId = $(this).data('user-id');
+                    if ($(this).is(':checked')) {
+                        selectedUsers.add(userId);
+                    } else {
+                        selectedUsers.delete(userId);
+                    }
+                    updateBulkActionsBar();
+                });
+                
+                // Select all functionality
+                $('#selectAllCheckbox').on('change', function() {
+                    const isChecked = $(this).is(':checked');
+                    $('.user-checkbox').prop('checked', isChecked);
+                    if (isChecked) {
+                        $('.user-checkbox').each(function() {
+                            selectedUsers.add($(this).data('user-id'));
+                        });
+                    } else {
+                        selectedUsers.clear();
+                    }
+                    updateBulkActionsBar();
+                });
             }
             
             function renderUserTable(users, type) {
                 if (users.length === 0) return '<div class="text-center py-4"><p class="text-muted">No users found</p></div>';
                 
-                let table = '<div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>ID</th><th>RFID</th><th>First Name</th><th>Last Name</th><th>Role</th>';
+                let table = '<div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr>';
+                table += '<th class="checkbox-col"><input type="checkbox" class="select-all-in-tab"></th>';
+                table += '<th>ID</th><th>RFID</th><th>First Name</th><th>Last Name</th><th>Role</th>';
                 if (type === 'students' || type === 'all') table += '<th>Course</th>';
                 table += '<th>Status</th><th class="text-center">Actions</th></thead><tbody>';
                 
                 users.forEach(user => {
-                    table += `<tr>
+                    const isChecked = selectedUsers.has(user.User_id);
+                    const statusBadgeClass = user.Status === 'Active' ? 'badge-active' : 'badge-inactive';
+                    table += `<tr id="user-row-${user.User_id}">
+                        <td class="checkbox-col"><input type="checkbox" class="user-checkbox" data-user-id="${user.User_id}" ${isChecked ? 'checked' : ''}></td>
                         <td>${user.User_id}</td>
                         <td>${escapeHtml(user.Rfid_tag)}</td>
                         <td>${escapeHtml(user.F_name)}</td>
@@ -473,16 +696,54 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                     if (type === 'students' || type === 'all') {
                         table += `<td>${escapeHtml(user.CourseSection || 'N/A')}</td>`;
                     }
-                    table += `<td><span class="badge ${user.Status === 'Active' ? 'bg-success' : 'bg-secondary'}">${user.Status}</span></td>
+                    table += `<td><span class="badge ${statusBadgeClass}">${user.Status}</span></td>
                         <td class="text-center">
                             <button class="btn btn-success btn-sm me-1" onclick='editUser(${JSON.stringify(user).replace(/'/g, "&#39;")})'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.User_id}, '${escapeHtml(user.F_name)}', '${escapeHtml(user.L_name)}')"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUserFromTable(${user.User_id}, '${escapeHtml(user.F_name)}', '${escapeHtml(user.L_name)}')"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
                 });
                 
                 table += '</tbody></table></div>';
+                
+                // Add select all in tab functionality after rendering
+                setTimeout(() => {
+                    $('.select-all-in-tab').off('change').on('change', function() {
+                        const isChecked = $(this).is(':checked');
+                        $(this).closest('table').find('.user-checkbox').prop('checked', isChecked);
+                        if (isChecked) {
+                            $(this).closest('table').find('.user-checkbox').each(function() {
+                                selectedUsers.add($(this).data('user-id'));
+                            });
+                        } else {
+                            $(this).closest('table').find('.user-checkbox').each(function() {
+                                selectedUsers.delete($(this).data('user-id'));
+                            });
+                        }
+                        updateBulkActionsBar();
+                    });
+                }, 100);
+                
                 return table;
+            }
+            
+            function updateBulkActionsBar() {
+                if (selectedUsers.size > 0) {
+                    $('#bulkActionsBar').addClass('show');
+                    $('#selectedCount').text(selectedUsers.size);
+                } else {
+                    $('#bulkActionsBar').removeClass('show');
+                }
+                // Update main select all checkbox
+                const totalCheckboxes = $('.user-checkbox').length;
+                const checkedCheckboxes = $('.user-checkbox:checked').length;
+                if (totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes) {
+                    $('#selectAllCheckbox').prop('checked', true).prop('indeterminate', false);
+                } else if (checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes) {
+                    $('#selectAllCheckbox').prop('checked', false).prop('indeterminate', true);
+                } else {
+                    $('#selectAllCheckbox').prop('checked', false).prop('indeterminate', false);
+                }
             }
             
             function escapeHtml(str) {
@@ -495,8 +756,278 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                 });
             }
             
+            // Delete single user from table (moves to archive)
+            window.deleteUserFromTable = function(id, fname, lname) {
+                Swal.fire({
+                    title: `Delete ${fname} ${lname}?`,
+                    text: "This user will be moved to archive.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Yes, delete'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#loadingOverlay').show();
+                        $.ajax({
+                            url: 'users_api.php',
+                            type: 'POST',
+                            data: { 
+                                action: 'archive_user', 
+                                user_id: id, 
+                                csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' 
+                            },
+                            success: function(response) {
+                                $('#loadingOverlay').hide();
+                                if (response.success) {
+                                    // Remove the row from the table with animation
+                                    const row = $(`#user-row-${id}`);
+                                    row.addClass('user-row-delete');
+                                    
+                                    setTimeout(() => {
+                                        // Remove from local data
+                                        allUsers = allUsers.filter(user => user.User_id != id);
+                                        // Remove from selected set if present
+                                        selectedUsers.delete(id);
+                                        // Re-render the table
+                                        renderUsers(allUsers);
+                                        // Update archive count badge
+                                        updateArchiveCount();
+                                        
+                                        Swal.fire('Deleted!', 'User has been moved to archive.', 'success');
+                                    }, 300);
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                $('#loadingOverlay').hide();
+                                Swal.fire('Error', 'Delete failed', 'error');
+                            }
+                        });
+                    }
+                });
+            };
+            
+            // Bulk Delete (Move to Archive)
+            $('#bulkDeleteBtn').click(function() {
+                if (selectedUsers.size === 0) {
+                    Swal.fire('Warning', 'No users selected', 'warning');
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Delete Users',
+                    text: `Are you sure you want to delete ${selectedUsers.size} user(s)? They will be moved to archive.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Yes, delete them'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const userIds = Array.from(selectedUsers);
+                        $('#loadingOverlay').show();
+                        $.ajax({
+                            url: 'users_api.php',
+                            type: 'POST',
+                            data: {
+                                action: 'bulk_archive',
+                                user_ids: JSON.stringify(userIds),
+                                csrf_token: '<?php echo $_SESSION['csrf_token']; ?>'
+                            },
+                            success: function(response) {
+                                $('#loadingOverlay').hide();
+                                if (response.success) {
+                                    // Remove deleted users from local data
+                                    allUsers = allUsers.filter(user => !userIds.includes(user.User_id));
+                                    selectedUsers.clear();
+                                    renderUsers(allUsers);
+                                    updateArchiveCount();
+                                    Swal.fire('Deleted!', response.message, 'success');
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                $('#loadingOverlay').hide();
+                                Swal.fire('Error', 'Bulk delete failed', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Clear Selection
+            $('#clearSelectionBtn').click(function() {
+                selectedUsers.clear();
+                $('.user-checkbox').prop('checked', false);
+                updateBulkActionsBar();
+                Swal.fire('Info', 'Selection cleared', 'info');
+            });
+            
+            // View Archive
+            $('#viewArchiveBtn').click(function() {
+                loadArchivedUsers();
+                $('#archiveModal').modal('show');
+            });
+            
+            function loadArchivedUsers() {
+                $('#archiveTableBody').html(`
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading archived users...</p>
+                        </td>
+                    </tr>
+                `);
+                
+                $.ajax({
+                    url: 'users_api.php',
+                    type: 'POST',
+                    data: { action: 'get_archived_users' },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            displayArchivedUsers(response.users);
+                        } else {
+                            $('#archiveTableBody').html('<tr><td colspan="8" class="text-center text-danger">' + response.message + '</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        $('#archiveTableBody').html('<tr><td colspan="8" class="text-center text-danger">Failed to load archived users</td></tr>');
+                    }
+                });
+            }
+            
+            function displayArchivedUsers(users) {
+                if (users.length === 0) {
+                    $('#archiveTableBody').html('<tr><td colspan="8" class="text-center py-4"><i class="fas fa-archive fa-3x text-muted mb-3"></i><p class="text-muted">No archived users found</p></td></tr>');
+                    return;
+                }
+                
+                let html = '';
+                users.forEach(user => {
+                    html += `<tr id="archived-user-${user.User_id}">
+                        <td>${user.User_id}</td>
+                        <td>${escapeHtml(user.Rfid_tag)}</td>
+                        <td>${escapeHtml(user.F_name)}</td>
+                        <td>${escapeHtml(user.L_name)}</td>
+                        <td><span class="badge bg-secondary">${user.Role}</span></td>
+                        <td>${escapeHtml(user.CourseSection || 'N/A')}</td>
+                        <td><small>${user.archived_date || 'N/A'}</small></td>
+                        <td>
+                            <button class="btn btn-success btn-sm restore-btn" onclick="restoreUserFromArchive(${user.User_id}, '${escapeHtml(user.F_name)}', '${escapeHtml(user.L_name)}')">
+                                <i class="fas fa-trash-restore"></i> Restore
+                            </button>
+                            <button class="btn btn-danger btn-sm permanent-delete-btn" onclick="permanentDeleteUserFromArchive(${user.User_id}, '${escapeHtml(user.F_name)}', '${escapeHtml(user.L_name)}')">
+                                <i class="fas fa-trash"></i> Permanent Delete
+                            </button>
+                         </td>
+                     </tr>`;
+                });
+                
+                $('#archiveTableBody').html(html);
+                
+                // Add search functionality
+                $('#archiveSearch').off('keyup').on('keyup', function() {
+                    const searchTerm = $(this).val().toLowerCase();
+                    const filtered = users.filter(user => 
+                        `${user.F_name} ${user.L_name} ${user.Rfid_tag} ${user.Role}`.toLowerCase().includes(searchTerm)
+                    );
+                    displayArchivedUsers(filtered);
+                });
+            }
+            
+            // Restore user from archive
+            window.restoreUserFromArchive = function(id, fname, lname) {
+                Swal.fire({
+                    title: `Restore ${fname} ${lname}?`,
+                    text: "This user will be restored to active status.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    confirmButtonText: 'Yes, restore'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#loadingOverlay').show();
+                        $.ajax({
+                            url: 'users_api.php',
+                            type: 'POST',
+                            data: { 
+                                action: 'restore_user', 
+                                user_id: id, 
+                                csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' 
+                            },
+                            success: function(response) {
+                                $('#loadingOverlay').hide();
+                                if (response.success) {
+                                    // Reload both tables
+                                    loadUsers();
+                                    loadArchivedUsers();
+                                    updateArchiveCount();
+                                    Swal.fire('Restored!', 'User has been restored.', 'success');
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                $('#loadingOverlay').hide();
+                                Swal.fire('Error', 'Restore failed', 'error');
+                            }
+                        });
+                    }
+                });
+            };
+            
+            // Permanent delete from archive
+            window.permanentDeleteUserFromArchive = function(id, fname, lname) {
+                Swal.fire({
+                    title: `Permanently Delete ${fname} ${lname}?`,
+                    text: "This will permanently remove the user from the database. This action cannot be undone!",
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Yes, permanently delete'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#loadingOverlay').show();
+                        $.ajax({
+                            url: 'users_api.php',
+                            type: 'POST',
+                            data: { 
+                                action: 'permanent_delete_user', 
+                                user_id: id, 
+                                csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' 
+                            },
+                            success: function(response) {
+                                $('#loadingOverlay').hide();
+                                if (response.success) {
+                                    // Remove the row from archive table
+                                    $(`#archived-user-${id}`).remove();
+                                    updateArchiveCount();
+                                    Swal.fire('Deleted!', 'User permanently deleted.', 'success');
+                                    
+                                    // If no more archived users, show empty message
+                                    if ($('#archiveTableBody tr').length === 0) {
+                                        displayArchivedUsers([]);
+                                    }
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                $('#loadingOverlay').hide();
+                                Swal.fire('Error', 'Permanent delete failed', 'error');
+                            }
+                        });
+                    }
+                });
+            };
+            
             // Filter handlers
             $('#roleFilter, #courseFilter, #statusFilter, #searchInput').on('change keyup', function() {
+                selectedUsers.clear();
                 renderUsers(allUsers);
             });
             
@@ -505,6 +1036,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                 $('#courseFilter').val('all');
                 $('#statusFilter').val('all');
                 $('#searchInput').val('');
+                selectedUsers.clear();
                 renderUsers(allUsers);
             });
             
@@ -661,7 +1193,7 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
                         <td>${escapeHtml(row.course)}</td>
                         <td>${row.isValid ? '<span class="badge bg-success">✓ Valid</span>' : '<span class="badge bg-danger">✗ Invalid</span>'}</td>
                         <td>${row.errors.length > 0 ? `<ul class="error-list">${row.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<span class="text-success">No errors</span>'}</td>
-                    </tr>`;
+                     </tr>`;
                 });
                 $('#previewBody').html(html);
                 
@@ -750,38 +1282,6 @@ $inactive_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c F
             $('#courseSection').val(user.cs_id || '');
             $('#courseSectionContainer').toggle(user.Role === 'Student');
             new bootstrap.Modal(document.getElementById('userModal')).show();
-        }
-        
-        function deleteUser(id, fname, lname) {
-            Swal.fire({
-                title: `Delete ${fname} ${lname}?`,
-                text: "User must be Inactive before deletion.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#loadingOverlay').show();
-                    $.ajax({
-                        url: 'users_api.php',
-                        type: 'POST',
-                        data: { action: 'delete_user', user_id: id, csrf_token: '<?php echo $_SESSION['csrf_token']; ?>' },
-                        success: function(response) {
-                            $('#loadingOverlay').hide();
-                            if (response.success) {
-                                location.reload();
-                            } else {
-                                Swal.fire('Error', response.message, 'error');
-                            }
-                        },
-                        error: function() {
-                            $('#loadingOverlay').hide();
-                            Swal.fire('Error', 'Delete failed', 'error');
-                        }
-                    });
-                }
-            });
         }
     </script>
     

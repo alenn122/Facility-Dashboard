@@ -26,20 +26,30 @@ if (isset($_POST['ping'])) {
     $mac = $_POST['mac'];
     $conn->query("UPDATE devices SET last_seen = NOW(), status = 'Online' WHERE mac_address = '$mac'");
     
-    $res = $conn->query("SELECT d.room_id, d.device_type, c.Status, c.grace_period FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
+    $res = $conn->query("SELECT d.room_id, d.device_type, c.Status, c.grace_period, c.shutdown_at FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
     
     if ($res && $res->num_rows > 0) {
         $row = $res->fetch_assoc();
         $rid = $row['room_id'];
         $dtype = strtoupper($row['device_type']);
 
+        // --- NEW: 1-MINUTE DELAY LOGIC ---
+        if ($row['Status'] == 'Pending Shutdown') {
+            $shutdown_timestamp = strtotime($row['shutdown_at']);
+            if (time() >= $shutdown_timestamp) {
+                $conn->query("UPDATE classrooms SET Status = 'Unoccupied', shutdown_at = NULL WHERE Room_id = '$rid'");
+                echo "FORCE_OFF"; exit();
+            } else {
+                echo "PONG"; exit(); // Keep on until timer hits
+            }
+        }
+
         if ($row['Status'] == 'Occupied') {
-            // Check if an Admin/Faculty is inside (Shutdown Override)
+            // Shutdown Override Logic (Admins/Active Faculty inside)
             $last_user_query = $conn->query("SELECT u.Role FROM access_log l JOIN users u ON l.User_id = u.User_id WHERE l.Room_id = '$rid' AND l.Status = 'granted' AND l.Access_type = 'Entry' ORDER BY l.Access_time DESC LIMIT 1");
             
             if ($last_user_query && $last_user_query->num_rows > 0) {
                 $u_role = $last_user_query->fetch_assoc()['Role'];
-                // Check policy table to see if this role keeps power on
                 $policy = $conn->query("SELECT can_override_shutdown FROM access_policies WHERE role = '$u_role' AND (device_type = '$dtype' OR device_type = '*') LIMIT 1")->fetch_assoc();
 
                 if ($policy && $policy['can_override_shutdown'] == 1) {
@@ -47,21 +57,17 @@ if (isset($_POST['ping'])) {
                 }
             }
 
-            // --- HIERARCHICAL GRACE PERIOD LOGIC ---
+            // Check for valid schedule (EXCLUDING ARCHIVED/DELETED)
             $day = date('D'); $time = date('H:i:s');
-            $sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time LIMIT 1");
+            $sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time AND is_deleted = 0 LIMIT 1");
 
             if ($sched->num_rows == 0) {
-                // Schedule ended, find the last session to calculate grace
-                $last_sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND End_time <= '$time' ORDER BY End_time DESC LIMIT 1")->fetch_assoc();
+                $last_sched = $conn->query("SELECT End_time FROM schedule WHERE Room_id = '$rid' AND Day = '$day' AND End_time <= '$time' AND is_deleted = 0 ORDER BY End_time DESC LIMIT 1")->fetch_assoc();
                 
-                // Use Room Specific (if > 0) else fallback to Global
                 $active_grace = ($row['grace_period'] > 0) ? $row['grace_period'] : ($global_settings['global_grace_period'] ?? 15);
-                $seconds_since_end = time() - strtotime($last_sched['End_time']);
+                $seconds_since_end = time() - strtotime($last_sched['End_time'] ?? '00:00:00');
 
                 if ($seconds_since_end < ($active_grace * 60)) {
-                    // Check for 1-minute warning for extension
-                    if ($seconds_since_end >= (($active_grace * 60) - 60)) { echo "WARNING_EXTEND"; exit(); }
                     echo "PONG"; exit();
                 } else {
                     $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$rid'");
@@ -79,15 +85,13 @@ if (isset($_POST['ping'])) {
 $mac = $_POST['mac'] ?? ''; 
 $rfid = $_POST['rfid'] ?? '';
 
-// LOOKUP ROOM & DEVICE (Including custom logic toggles)
-$dev_res = $conn->query("SELECT d.room_id, d.device_type, c.double_tap_exit, c.allow_extension FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
+$dev_res = $conn->query("SELECT d.room_id, d.device_type, c.double_tap_exit FROM devices d JOIN classrooms c ON d.room_id = c.Room_id WHERE d.mac_address = '$mac' LIMIT 1");
 if (!$dev_res || $dev_res->num_rows == 0) { echo "UNKNOWN_DEVICE"; exit(); }
 $device = $dev_res->fetch_assoc();
 
 $room_id = $device['room_id'];
 $device_type = strtoupper($device['device_type']);
 
-// USER LOOKUP
 $user_query = $conn->query("SELECT * FROM users WHERE Rfid_tag='$rfid' AND Status='Active'");
 if ($user_query->num_rows == 0) {
     echo "DENIED"; 
@@ -98,18 +102,13 @@ $user = $user_query->fetch_assoc();
 $user_id = $user['User_id'];
 $u_role = $user['Role'];
 
-// SMART ENTRY/EXIT TOGGLE
 $last_log = $conn->query("SELECT Access_type, Access_time FROM access_log WHERE User_id = '$user_id' AND Room_id = '$room_id' AND Status = 'granted' ORDER BY Access_time DESC LIMIT 1")->fetch_assoc();
 $access_type = ($last_log && $last_log['Access_type'] == 'Entry') ? 'Exit' : 'Entry';
 
-// --- INTENT DISAMBIGUATION (Double-Tap vs Extension) ---
+// Double-Tap Exit Logic
 if ($access_type == 'Exit' && $u_role == 'Faculty') {
     $time_since_tap = time() - strtotime($last_log['Access_time']);
-    
-    // Use Room-specific setting if customized, otherwise use Global Default
-    $dtap_enabled = ($device['double_tap_exit'] == 1) ? true : (($global_settings['global_double_tap'] ?? 1) == 1);
-    
-    // Double-tap (less than 5 seconds) forces an EXIT during a warning/grace period
+    $dtap_enabled = ($device['double_tap_exit'] == 1);
     if ($dtap_enabled && $time_since_tap < 5) {
         $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
         echo "POWER_OFF";
@@ -118,31 +117,35 @@ if ($access_type == 'Exit' && $u_role == 'Faculty') {
     }
 }
 
-// --- PERMISSION CHECK (Policy Table) ---
+// PERMISSION CHECK
 $policy = $conn->query("SELECT * FROM access_policies WHERE role = '$u_role' AND (device_type = '$device_type' OR device_type = '*') LIMIT 1")->fetch_assoc();
 $is_auth = false; $sched_id = "NULL";
 
 if ($policy) {
+    // Check schedule while filtering out DELETED/ARCHIVED (is_deleted = 0)
     if ($policy['requires_schedule'] == 1) {
         $sched = check_schedule($user_id, $room_id, $user['CourseSection_id']);
-        if ($sched) { $is_auth = true; $sched_id = $sched['Schedule_id']; }
+        if ($sched) { 
+            $is_auth = true; 
+            $sched_id = $sched['Schedule_id']; 
+        }
     } else { $is_auth = true; }
 }
 
-// 6. EXECUTE ACCESS
+// EXECUTE ACCESS
 if ($is_auth) {
     log_access($user_id, $rfid, $room_id, $sched_id, $access_type, 'granted', $device_type);
-    if ($device_type == 'POWER') {
+    if ($device_type == 'POWER' || $device_type == 'DOOR') {
         if ($access_type == 'Entry') {
-            $conn->query("UPDATE classrooms SET Status = 'Occupied' WHERE Room_id = '$room_id'");
-            echo "POWER_ON";
+            $conn->query("UPDATE classrooms SET Status = 'Occupied', shutdown_at = NULL WHERE Room_id = '$room_id'");
+            echo ($device_type == 'POWER') ? "POWER_ON" : "GRANTED";
         } else {
             $conn->query("UPDATE classrooms SET Status = 'Unoccupied' WHERE Room_id = '$room_id'");
-            echo "POWER_OFF";
+            echo ($device_type == 'POWER') ? "POWER_OFF" : "GRANTED";
         }
     } else { echo "GRANTED"; }
 } else {
-    echo "DENIED";
+    echo "DENIED"; // Faculty with deleted schedule hits this
     log_access($user_id, $rfid, $room_id, null, $access_type, 'denied', $device_type);
 }
 
@@ -151,17 +154,17 @@ if ($is_auth) {
 function check_schedule($user_id, $room_id, $course_section_id) {
     global $conn; $day = date('D'); $time = date('H:i:s');
     
-    // 1. Faculty Check
-    $faculty_res = $conn->query("SELECT Schedule_id FROM schedule WHERE Room_id = '$room_id' AND Faculty_id = '$user_id' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time LIMIT 1");
+    // Faculty Check (Strictly checks is_deleted = 0)
+    $faculty_res = $conn->query("SELECT Schedule_id FROM schedule WHERE Room_id = '$room_id' AND Faculty_id = '$user_id' AND Day = '$day' AND '$time' BETWEEN Start_time AND End_time AND is_deleted = 0 LIMIT 1");
     if ($faculty_res && $faculty_res->num_rows > 0) return $faculty_res->fetch_assoc();
 
-    // 2. Individual Permission Check
-    $special_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id WHERE s.Room_id = '$room_id' AND ip.User_id = '$user_id' AND s.Day = '$day' AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1");
+    // Individual Permission
+    $special_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN individual_permissions ip ON s.Schedule_id = ip.Schedule_id WHERE s.Room_id = '$room_id' AND ip.User_id = '$user_id' AND s.Day = '$day' AND '$time' BETWEEN s.Start_time AND s.End_time AND s.is_deleted = 0 LIMIT 1");
     if ($special_res && $special_res->num_rows > 0) return $special_res->fetch_assoc();
 
-    // 3. Regular Student Check
+    // Student Check
     if (!empty($course_section_id) && $course_section_id !== "NULL") {
-        $student_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id WHERE s.Room_id = '$room_id' AND s.Day = '$day' AND sa.CourseSection_id = '$course_section_id' AND '$time' BETWEEN s.Start_time AND s.End_time LIMIT 1");
+        $student_res = $conn->query("SELECT s.Schedule_id FROM schedule s JOIN schedule_access sa ON s.Schedule_id = sa.Schedule_id WHERE s.Room_id = '$room_id' AND s.Day = '$day' AND sa.CourseSection_id = '$course_section_id' AND '$time' BETWEEN s.Start_time AND s.End_time AND s.is_deleted = 0 LIMIT 1");
         return ($student_res && $student_res->num_rows > 0) ? $student_res->fetch_assoc() : false;
     }
     return false;

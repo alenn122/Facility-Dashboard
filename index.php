@@ -117,8 +117,6 @@ header("Expires: 0");
                              
                                 <?php while ($row = $log_id->fetch_assoc()): ?>
                                     <tr>
-                                        
-
                                         <td><strong><?php echo $row['F_name'] . ' ' . $row['L_name'];?></strong></td>
                                         <td><?php echo $row['Role']; ?></td>
                                         <td><?php echo $row['Room_code']; ?></td>
@@ -146,16 +144,6 @@ header("Expires: 0");
         </div>
     </div>
 
-
-
-
-
-
-
-
-
-
-
     <!-- JAVASCRIPT -->
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
@@ -176,14 +164,17 @@ header("Expires: 0");
                                 } else if (log.Rfid_tag) {
                                     displayName = `Unknown (${log.Rfid_tag})`;
                                 }
+                                
+                                const dateObj = new Date(log.Access_time);
+                                const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' ' + dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
                                 const row = document.createElement('tr');
                                 row.innerHTML = `
-                                                                                                        
                                     <td><strong>${displayName}</strong></td>
                                     <td>${log.Role}</td>
                                     <td>${log.Room_code}</td>
                                     <td><small class="badge bg-secondary">${log.device_type || 'N/A'}</small></td> 
-                                    <td>${log.Access_time}</td>
+                                    <td>${formattedDate}</td>
                                     <td>${log.Access_type}</td>
                                     <td><span class="status ${log.Status.toLowerCase()}">${log.Status}</span></td>
                                 `;
